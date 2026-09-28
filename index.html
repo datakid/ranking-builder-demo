@@ -183,6 +183,80 @@ a{color:#111;text-decoration:underline}
 .skiplink{position:fixed;left:-999px;top:8px;z-index:100;background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:700}
 .skiplink:focus{left:8px}
 
+:root:not([data-theme="dark"]){--paper:#faf8fc;--paper-2:#f2eff7;--surface:rgba(255,255,255,.82);--line:rgba(60,45,95,.09);--line-2:rgba(60,45,95,.16);--accent:#6b5596;--accent-soft:rgba(107,85,150,.10)}
+:root{--shadow-1:0 1px 2px rgba(50,35,90,.05),0 2px 8px -2px rgba(50,35,90,.06);--shadow-2:0 1px 2px rgba(50,35,90,.05),0 12px 30px -14px rgba(50,35,90,.2);--ease:cubic-bezier(.2,.7,.2,1)}
+body{background:radial-gradient(1100px 520px at 85% -10%,rgba(150,120,210,.12),transparent 60%),var(--paper);background-attachment:fixed}
+[data-theme="dark"] body{background:var(--paper)}
+header{padding:10px 22px;gap:10px}
+.brand b{font-size:18px;letter-spacing:-.01em}
+nav.tabs button{transition:background .16s,color .16s,box-shadow .16s}
+nav.tabs button:hover{color:var(--ink)}
+.btn,.iconbtn,select.hdr,.pinbtn{transition:background .16s,border-color .16s,color .16s,transform .16s,box-shadow .16s}
+.btn{background:var(--surface);box-shadow:var(--shadow-1);padding:8px 16px}
+.btn:hover:not(:disabled){background:var(--accent-soft);border-color:rgba(107,85,150,.35)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn.primary{box-shadow:0 6px 16px -8px rgba(107,85,150,.8)}
+.btn.primary:hover:not(:disabled){background:#5b4784;border-color:transparent}
+.iconbtn,select.hdr{border-radius:999px;padding:7px 13px}
+select.hdr{cursor:pointer}
+.iconbtn:hover:not(:disabled),select.hdr:hover{background:var(--accent-soft);border-color:rgba(107,85,150,.35)}
+main{padding:28px 22px 90px}
+.view h1{font-size:26px;font-weight:400;font-style:italic;letter-spacing:-.01em}
+.panel,.ccard,.rankrow,.h2h,.exrow{box-shadow:var(--shadow-1);border-radius:var(--r2)}
+.ccard{padding:18px;transition:box-shadow .2s,transform .2s}
+.ccard:hover{box-shadow:var(--shadow-2)}
+.ccard input.field,.ccard select.field,.ccard textarea.field,.directrow input[type="number"]{border-radius:10px;padding:7px 10px;transition:border-color .16s,box-shadow .16s}
+.ccard input.field:focus,.ccard select.field:focus,.ccard textarea.field:focus,.directrow input[type="number"]:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px var(--accent-soft)}
+.gridwrap{border-radius:var(--r2);box-shadow:var(--shadow-1);background:var(--surface)}
+table.grid{background:transparent}
+table.grid th{padding:10px 12px;font-size:11.5px;letter-spacing:.01em}
+table.grid th.txt,table.grid td.txt{text-align:left}
+table.grid th .colhead small{display:block;margin-top:2px;font-size:10.5px}
+table.grid .cellbox{padding:9px 12px}
+table.grid tbody tr{transition:background .12s}
+table.grid tbody tr:hover td{background:var(--accent-soft)}
+table.grid tbody tr:hover td.lbl{background:#ebe6f3}
+table.grid .lblbox{display:flex;align-items:center;gap:8px;min-width:0}
+table.grid .lbltext{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+table.grid .rowops{display:inline-flex;gap:2px;opacity:0;transition:opacity .16s}
+table.grid tr:hover .rowops,table.grid .lblbox:focus-within .rowops{opacity:1}
+table.grid button.mini{width:22px;height:22px;border-radius:7px;display:inline-grid;place-items:center;font-size:11.5px;color:var(--ink-mu);transition:background .14s,color .14s}
+table.grid button.mini:hover{background:var(--paper);color:var(--ink)}
+table.grid button.mini.del:hover,table.grid th button.mini[data-colop="del"]:hover{background:rgba(176,90,82,.12);color:var(--bad)}
+table.grid th .colhead>span:last-child{opacity:.55;transition:opacity .16s}
+table.grid th:hover .colhead>span:last-child{opacity:1}
+@media (hover:none){table.grid .rowops,table.grid th .colhead>span:last-child{opacity:1}}
+.rankrow{padding:12px 16px;transition:box-shadow .2s,border-color .2s}
+.rankrow:hover{box-shadow:var(--shadow-2);border-color:var(--line-2)}
+.rankrow .rn{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--paper-2);font-size:12.5px}
+.ranklist .rankrow:first-child .rn{background:var(--accent);color:#fff}
+.rankrow .rt{font-size:18px;letter-spacing:-.02em}
+.contribbar{height:9px;border-radius:999px;gap:1px;background:var(--paper-2)}
+.weightbar{height:32px;border-radius:12px;gap:2px;border:none}
+.weightbar span{border-radius:0}
+.presetrow,.rocrow,.deltalist .dchip{border-radius:12px}
+.badge{padding:3px 10px}
+.dirtoggle button{transition:background .16s,color .16s}
+.modalbg{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:rb-fade .16s var(--ease)}
+.modal{border-radius:26px;padding:24px;box-shadow:0 30px 70px -24px rgba(40,25,80,.35);animation:rb-pop .24s var(--ease)}
+.modal h2{font-weight:400;font-style:italic;font-size:21px}
+.toast{animation:rb-toast .24s var(--ease)}
+.banner{border-radius:16px}
+input[type=range]{accent-color:var(--accent)}
+@keyframes rb-fade{from{opacity:0}to{opacity:1}}
+@keyframes rb-pop{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes rb-toast{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (max-width:760px){
+header{flex-wrap:wrap;padding:10px 12px;row-gap:8px}
+.brand span{display:none}
+nav.tabs{order:3;width:100%;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{flex:1;padding:7px 10px;white-space:nowrap}
+main{padding:18px 12px 80px}
+.criteria-grid{grid-template-columns:1fr}
+.directrow{grid-template-columns:1fr 60px;row-gap:4px}
+.directrow input[type="range"]{grid-column:1/-1}
+}
 @media (prefers-reduced-motion:reduce){
 *{transition:none!important;animation:none!important}
 }
@@ -202,7 +276,7 @@ a{color:#111;text-decoration:underline}
 <button data-view="record">Record</button>
 </nav>
 <select class="hdr" id="exampleSel">
-<option value="">Load example\u2026</option>
+<option value="">Load example…</option>
 </select>
 <button class="iconbtn" id="undoBtn" title="Undo">Undo</button>
 <button class="iconbtn" id="redoBtn" title="Redo">Redo</button>
@@ -1305,7 +1379,7 @@ let pendingPaste=null;
 VIEWS.data={
 render(){
 const model=STORE.model;
-const heads=model.criteria.map((cr,ci)=>`<th data-c="${ci}"><div class="colhead">
+const heads=model.criteria.map((cr,ci)=>`<th data-c="${ci}" class="${cr.type==='categorical'||cr.type==='category'||(model.options.length&&model.options.every(o=>o.values[cr.id]==null||typeof o.values[cr.id]!=='number'))?'txt':''}"><div class="colhead">
 <span>${esc(cr.label)}${cr.unit?'<br><small>'+esc(cr.unit)+'</small>':''}</span>
 <span><button class="mini" data-colop="dup" data-c="${ci}" title="Duplicate column">\u29c9</button><button class="mini" data-colop="del" data-c="${ci}" title="Remove column">\u2715</button></span>
 </div></th>`).join('');
@@ -1313,14 +1387,14 @@ const rows=model.options.map((opt,ri)=>{
 const labelEditing=STORE.ui.editingCell&&STORE.ui.editingCell.r===ri&&STORE.ui.editingCell.c===-1;
 const labelCell=labelEditing
 ?`<input class="cellinput" id="cellEdit" value="${esc(opt.label)}">`
-:`<div class="cellbox" tabindex="0"><button class="mini" data-rowop="up" data-r="${ri}" title="Move up">\u2191</button><button class="mini" data-rowop="down" data-r="${ri}" title="Move down">\u2193</button><button class="mini" data-rowop="dup" data-r="${ri}" title="Duplicate row">\u29c9</button><button class="mini" data-rowop="del" data-r="${ri}" title="Remove row">\u2715</button> ${esc(opt.label)}</div>`;
+:`<div class="cellbox lblbox" tabindex="0"><span class="lbltext">${esc(opt.label)}</span><span class="rowops"><button class="mini" data-rowop="up" data-r="${ri}" title="Move up" aria-label="Move up">\u2191</button><button class="mini" data-rowop="down" data-r="${ri}" title="Move down" aria-label="Move down">\u2193</button><button class="mini" data-rowop="dup" data-r="${ri}" title="Duplicate row" aria-label="Duplicate row">\u29c9</button><button class="mini del" data-rowop="del" data-r="${ri}" title="Remove row" aria-label="Remove row">\u2715</button></span></div>`;
 const cells=model.criteria.map((cr,ci)=>{
 const raw=opt.values[cr.id];
 const missing=raw===null||raw===undefined||raw==='';
 const editing=STORE.ui.editingCell&&STORE.ui.editingCell.r===ri&&STORE.ui.editingCell.c===ci;
 if(editing)return`<td data-r="${ri}" data-c="${ci}"><input class="cellinput" id="cellEdit" value="${missing?'':esc(String(raw))}"></td>`;
 const disp=missing?'\u2014':(typeof raw==='number'?fmt(raw,2):esc(String(raw)));
-return`<td data-r="${ri}" data-c="${ci}"><div class="cellbox${missing?' missing':''}" tabindex="0" title="${missing?'Missing value':''}">${disp}</div></td>`;
+return`<td data-r="${ri}" data-c="${ci}" class="${!missing&&typeof raw!=='number'?'txt':''}"><div class="cellbox${missing?' missing':''}" tabindex="0" title="${missing?'Missing value':''}">${disp}</div></td>`;
 }).join('');
 return`<tr><td class="lbl" data-r="${ri}" data-c="-1">${labelCell}</td>${cells}</tr>`;
 }).join('');
