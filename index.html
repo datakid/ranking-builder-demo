@@ -726,6 +726,7 @@ return'('+l+n.o+r+')';
 }
 default:{
 const a=n.a.map(t=>sheet(t,m));
+if(m.__fn&&m.__fn[n.n])return m.__fn[n.n](a);
 if(n.n==='clamp')return'MIN('+a[2]+',MAX('+a[1]+','+a[0]+'))';
 if(n.n==='log2')return'LOG('+a[0]+',2)';
 if(n.n==='ceil')return'ROUNDUP('+a[0]+',0)';
@@ -842,7 +843,7 @@ const p=cr.scale.params||{};
 const st=eqStatusFor(cr,stats);
 const tid='eq_'+cr.id;
 const chips=[...customNames(p).filter(n=>n!=='e'),'exp(','ln(','sqrt(','pow(','clamp(','if(','abs(','tanh(','min(','max('].map(n=>chipHtml(n,tid)).join('');
-return'<label class="flabel">Equation \u00b7 f(x) \u2192 0 to 1</label><textarea class="field eq" id="'+tid+'" rows="2" spellcheck="false" data-crit="'+cr.id+'" data-param="expr">'+esc(p.expr===undefined?'x':p.expr)+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="'+cr.id+'">'+esc(st.text)+'</div><div class="eqchips">'+chips+'</div>';
+return tplSelect('crit:'+cr.id,EQ_TEMPLATES)+'<label class="flabel">Equation \u00b7 f(x) \u2192 0 to 1</label><textarea class="field eq" id="'+tid+'" rows="2" spellcheck="false" data-crit="'+cr.id+'" data-param="expr">'+esc(p.expr===undefined?'x':p.expr)+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="'+cr.id+'">'+esc(st.text)+'</div><div class="eqchips">'+chips+'</div>';
 }
 function constsEditor(cr){
 const p=cr.scale.params||{};
@@ -856,23 +857,209 @@ let extra='';
 if(a.kind==='custom'){
 const st=aggStatus(model);
 const chips=['wsum','wgeo','whm','wmin','wmax','wpow(','n'].map(n=>chipHtml(n,'eq_agg')).concat(model.criteria.map(c=>chipHtml(c.id,'eq_agg',c.label+' (score, 0 to 1)'))).concat(model.criteria.map(c=>chipHtml('w_'+c.id,'eq_agg',c.label+' (weight share)'))).concat((a.consts||[]).map(c=>chipHtml(c.name,'eq_agg'))).join('');
-extra='<label class="flabel" style="margin-top:12px">Equation \u00b7 combine the criteria into one number from 0 to 1</label><textarea class="field eq" id="eq_agg" rows="2" spellcheck="false" data-agg="expr">'+esc(a.expr||'')+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="agg">'+esc(st.text)+'</div><div class="eqchips">'+chips+'</div><label class="flabel">Constants, one \u2018name:value\u2019 per line</label><textarea class="field eq" rows="2" spellcheck="false" data-agg="consts">'+esc(constLines(a.consts))+'</textarea>';
+extra=tplSelect('agg',AGG_TEMPLATES)+'<label class="flabel" style="margin-top:12px">Equation \u00b7 combine the criteria into one number from 0 to 1</label><textarea class="field eq" id="eq_agg" rows="2" spellcheck="false" data-agg="expr">'+esc(a.expr||'')+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="agg">'+esc(st.text)+'</div><div class="eqchips">'+chips+'</div><label class="flabel">Constants, one \u2018name:value\u2019 per line</label><textarea class="field eq" rows="2" spellcheck="false" data-agg="consts">'+esc(constLines(a.consts))+'</textarea>';
 }
 return'<div class="panel methodpanel"><label class="flabel">Scoring method</label><select class="field" data-agg="kind">'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===ch?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+extra+'</div>';
 }
 function updateEqMsg(ta){
-const box=ta.parentNode.querySelector('[data-eqmsg]');
-if(!box)return;
-let st;
-if(ta.dataset.agg)st=aggStatus(STORE.model,ta.value);
+let key,st;
+if(ta.dataset.agg){key='agg';st=aggStatus(STORE.model,ta.value);}
 else{
 const cr=STORE.model.criteria.find(c=>c.id===ta.dataset.crit);
 if(!cr)return;
-st=eqStatusFor(cr,ENGINE.score(STORE.model).stats.perCriterion[cr.id],ta.value);
+if(ta.dataset.field==='formula'){key='f_'+cr.id;st=formulaStatus(STORE.model,cr,ta.value);}
+else{key=cr.id;st=eqStatusFor(cr,ENGINE.score(STORE.model).stats.perCriterion[cr.id],ta.value);}
 }
+const box=ta.parentNode.querySelector('[data-eqmsg="'+key+'"]');
+if(!box)return;
 box.className='eqmsg '+st.cls;
 box.textContent=st.text;
 }
+
+
+const EQ_TEMPLATES=[
+{n:'Saturating: fast gains, then flat',e:'1 - exp(-k * (x - min) / (max - min))',c:[{name:'k',value:3}]},
+{n:'Diminishing returns (log)',e:'ln(1 + x - min) / ln(1 + max - min)',c:[]},
+{n:'Square-root scaling',e:'sqrt((x - min) / (max - min))',c:[]},
+{n:'Lower is better (linear)',e:'1 - (x - min) / (max - min)',c:[]},
+{n:'Soft threshold (S-curve)',e:'1 / (1 + exp(-(x - mid) / width))',c:[{name:'mid',value:50},{name:'width',value:10}]},
+{n:'Full marks up to a limit, then a penalty',e:'x <= limit ? 1 : max(0, 1 - (x - limit) / span)',c:[{name:'limit',value:10},{name:'span',value:10}]},
+{n:'Closer to a target is better',e:'exp(-((x - target) / spread) ^ 2)',c:[{name:'target',value:50},{name:'spread',value:20}]}
+];
+const AGG_TEMPLATES=[
+{n:'Balanced: sum plus weakest link',e:'0.7 * wsum + 0.3 * wmin',c:[]},
+{n:'Penalise weak spots',e:'wsum * wmin ^ 0.5',c:[]},
+{n:'Weighted sum with a hard floor',e:'wmin < floor ? 0 : wsum',c:[{name:'floor',value:0.2}]},
+{n:'Blend arithmetic and geometric',e:'mix * wsum + (1 - mix) * wgeo',c:[{name:'mix',value:0.5}]}
+];
+function tplSelect(id,list){
+return'<select class="field" data-eqtpl="'+id+'"><option value="">Start from a template\u2026</option>'+list.map((t,i)=>'<option value="'+i+'">'+esc(t.n)+'</option>').join('')+'</select>';
+}
+function formulaStatus(model,cr,src){
+const t=src===undefined?(cr.formula||''):src;
+if(!t.trim())return{cls:'',text:'Optional. Leave empty for a normal data column.'};
+const c=EXPR.compile(t,model.criteria.filter(k=>k.id!==cr.id).map(k=>k.id).concat(['pi','e']));
+return c.ok?{cls:'good',text:'Valid. This column is calculated and read-only in Data.'}:{cls:'bad',text:c.error};
+}
+function formulaEditor(cr){
+const m=STORE.model,st=formulaStatus(m,cr),tid='fx_'+cr.id;
+const chips=m.criteria.filter(c=>c.id!==cr.id).map(c=>chipHtml(c.id,tid,c.label)).join('');
+return'<label class="flabel">Calculated from other criteria</label><textarea class="field eq" id="'+tid+'" rows="1" spellcheck="false" data-crit="'+cr.id+'" data-field="formula" placeholder="e.g. cost / seats">'+esc(cr.formula||'')+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="f_'+cr.id+'">'+esc(st.text)+'</div>'+(chips?'<div class="eqchips">'+chips+'</div>':'');
+}
+function materialize(model){
+const fc=model.criteria.filter(c=>c.formula);
+if(!fc.length)return model;
+const options=model.options.map(o=>({...o,values:{...o.values}}));
+const ids=model.criteria.map(c=>c.id);
+const progs=fc.map(c=>({c,p:EXPR.compile(c.formula,[...ids.filter(i=>i!==c.id),'pi','e'])}));
+for(let pass=0;pass<=fc.length;pass++){
+options.forEach(o=>{
+progs.forEach(({c,p})=>{
+if(!p.ok){o.values[c.id]=null;return;}
+const env={pi:Math.PI,e:Math.E};
+let ok=true;
+p.vars.forEach(k=>{
+if(k==='pi'||k==='e')return;
+const v=o.values[k];
+if(typeof v==='number'&&Number.isFinite(v))env[k]=v;else ok=false;
+});
+let r=null;
+if(ok){try{r=p.run(env);}catch(err){r=null;}}
+o.values[c.id]=Number.isFinite(r)?r:null;
+});
+});
+}
+return{...model,options};
+}
+const XLSX_W=(function(){
+const T=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t.push(c>>>0);}return t;})();
+function crc(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=T[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0;}
+function zip(files){
+const enc=new TextEncoder(),parts=[],cd=[];
+let off=0;
+files.forEach(f=>{
+const name=enc.encode(f.name),data=enc.encode(f.data),cs=crc(data);
+const h=new DataView(new ArrayBuffer(30));
+h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);
+h.setUint32(14,cs,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);
+parts.push(new Uint8Array(h.buffer),name,data);
+const c=new DataView(new ArrayBuffer(46));
+c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(14,0x21,true);
+c.setUint32(16,cs,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,off,true);
+cd.push(new Uint8Array(c.buffer),name);
+off+=30+name.length+data.length;
+});
+let cdSize=0;
+cd.forEach(x=>{cdSize+=x.length;});
+const e=new DataView(new ArrayBuffer(22));
+e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdSize,true);e.setUint32(16,off,true);
+const all=[...parts,...cd,new Uint8Array(e.buffer)];
+let len=0;
+all.forEach(x=>{len+=x.length;});
+const out=new Uint8Array(len);
+let p=0;
+all.forEach(x=>{out.set(x,p);p+=x.length;});
+return out;
+}
+const xe=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function col(i){let t='';i++;while(i>0){const m=(i-1)%26;t=String.fromCharCode(65+m)+t;i=Math.floor((i-1)/26);}return t;}
+function sheetXml(rows){
+let x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="30" customWidth="1"/><col min="2" max="30" width="16" customWidth="1"/></cols><sheetData>';
+rows.forEach((r,ri)=>{
+x+='<row r="'+(ri+1)+'">';
+r.forEach((c,ci)=>{
+if(c===null||c===undefined)return;
+const ref=col(ci)+(ri+1),st=c.h?' s="1"':'';
+if(c.f!==undefined)x+='<c r="'+ref+'"'+st+'><f>'+xe(c.f)+'</f></c>';
+else if(typeof c.n==='number')x+='<c r="'+ref+'"'+st+'><v>'+c.n+'</v></c>';
+else if(typeof c.b==='boolean')x+='<c r="'+ref+'" t="b"><v>'+(c.b?1:0)+'</v></c>';
+else x+='<c r="'+ref+'" t="inlineStr"'+st+'><is><t xml:space="preserve">'+xe(c.s===undefined?'':c.s)+'</t></is></c>';
+});
+x+='</row>';
+});
+return x+'</sheetData></worksheet>';
+}
+function build(model,result){
+const crit=model.criteria,opts=model.options,N=opts.length,L=crit.length;
+const colOf=i=>col(i+1);
+const rng=ci=>'Data!$'+colOf(ci)+'$2:$'+colOf(ci)+'$'+(N+1);
+const data=[[{s:'Option',h:1},...crit.map(c=>({s:c.label+(c.unit?' ('+c.unit+')':''),h:1}))]];
+opts.forEach((o,ri)=>{
+const row=[{s:o.label}];
+crit.forEach((c,ci)=>{
+if(c.formula){
+const cc=EXPR.compile(c.formula,[...crit.filter(k=>k.id!==c.id).map(k=>k.id),'pi','e']);
+const m={pi:String(Math.PI),e:String(Math.E)};
+crit.forEach((k,kj)=>{m[k.id]=colOf(kj)+(ri+2);});
+row.push({f:cc.ok?EXPR.sheet(cc.ast,m):'NA()'});
+return;
+}
+const v=o.values[c.id];
+if(v===null||v===undefined||v==='')row.push(null);
+else if(typeof v==='number')row.push({n:v});
+else if(typeof v==='boolean')row.push({b:v});
+else row.push({s:String(v)});
+});
+data.push(row);
+});
+const wr='$'+colOf(0)+'$2:$'+colOf(L-1)+'$2',wsum='SUM('+wr+')';
+const stats=result.stats.perCriterion;
+const ex={};
+result.excluded.forEach(e=>{ex[e.option.id]='Excluded: '+e.gate;});
+result.incomplete.forEach(e=>{ex[e.option.id]='Incomplete data';});
+const app={};
+result.ranked.forEach(t=>{app[t.option.id]=t.total;});
+const tc=col(L+1),sc=col(L+3),last=N+2;
+const sheet2=[[{s:'Option',h:1},...crit.map(c=>({s:c.label,h:1})),{s:'Total',h:1},{s:'Rank',h:1},{s:'Status',h:1},{s:'App total',h:1}]];
+sheet2.push([{s:'Weight (pts)'},...crit.map(c=>({n:c.weight}))]);
+opts.forEach((o,ri)=>{
+const r=ri+3,row=[{s:o.label}];
+crit.forEach((c,ci)=>{
+const raw='Data!'+colOf(ci)+(ri+2),k=c.scale.kind,p=c.scale.params||{};
+const st=k==='custom'?stats[c.id]:{...stats[c.id],min:'MIN('+rng(ci)+')',max:'MAX('+rng(ci)+')'};
+let f;
+if(k==='percentile')f='(RANK.AVG('+raw+','+rng(ci)+',1)-1)/(COUNT('+rng(ci)+')-1)';
+else if(k==='categorical')f=Object.keys(p.map||{}).reduceRight((acc,key)=>'IF('+raw+'="'+key.replace(/"/g,'""')+'",'+p.map[key]+','+acc+')','NA()');
+else f=NORMALIZERS[k].sheet(p,st,raw).slice(1);
+if(dirApplies(c))f='1-('+f+')';
+const pol=c.missing,imp=pol==='worst'?'0':pol==='neutral'?'0.5':pol==='best'?'1':'NA()';
+row.push({f:'IF(ISBLANK('+raw+'),'+imp+','+f+')'});
+});
+const nr=colOf(0)+r+':'+colOf(L-1)+r;
+const fl='(('+nr+'<0.001)*0.001+('+nr+'>=0.001)*'+nr+')',wf=wr+'/'+wsum,a=model.aggregate;
+let tf;
+if(a.kind==='custom'){
+const cc=EXPR.compile(a.expr||'wsum',aggNames(model),['wpow']);
+const m={n:String(L),pi:String(Math.PI),e:String(Math.E)};
+crit.forEach((c,ci)=>{m[c.id]=colOf(ci)+r;m['w_'+c.id]='($'+colOf(ci)+'$2/'+wsum+')';});
+Object.assign(m,{wsum:'(SUMPRODUCT('+nr+','+wr+')/'+wsum+')',wmin:'MIN('+nr+')',wmax:'MAX('+nr+')',wgeo:'EXP(SUMPRODUCT('+wf+',LN('+fl+')))',whm:'(1/SUMPRODUCT('+wf+'/'+fl+'))'});
+(a.consts||[]).forEach(q=>{m[q.name]=String(q.value);});
+m.__fn={wpow:x=>'(SUMPRODUCT('+wf+','+fl+'^'+x[0]+')^(1/'+x[0]+'))'};
+tf=cc.ok?'MIN(100,MAX(0,100*('+EXPR.sheet(cc.ast,m)+')))':'NA()';
+}else if(a.kind==='topsis')tf=null;
+else if(a.p===1)tf='SUMPRODUCT('+nr+','+wr+')/'+wsum+'*100';
+else if(a.p===0)tf='100*EXP(SUMPRODUCT('+wf+',LN('+fl+')))';
+else tf='100*SUMPRODUCT('+wf+','+fl+'^'+a.p+')^(1/'+a.p+')';
+row.push(tf===null?(app[o.id]!==undefined?{n:app[o.id]}:null):{f:tf});
+row.push({f:'IF('+sc+r+'<>"","",1+COUNTIFS($'+tc+'$3:$'+tc+'$'+last+',">"&'+tc+r+',$'+sc+'$3:$'+sc+'$'+last+',""))'});
+row.push(ex[o.id]?{s:ex[o.id]}:null);
+row.push(app[o.id]!==undefined?{n:app[o.id]}:null);
+sheet2.push(row);
+});
+const hdr='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+const ns='http://schemas.openxmlformats.org/';
+return zip([
+{name:'[Content_Types].xml',data:hdr+'<Types xmlns="'+ns+'package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'},
+{name:'_rels/.rels',data:hdr+'<Relationships xmlns="'+ns+'package/2006/relationships"><Relationship Id="rId1" Type="'+ns+'officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+{name:'xl/workbook.xml',data:hdr+'<workbook xmlns="'+ns+'spreadsheetml/2006/main" xmlns:r="'+ns+'officeDocument/2006/relationships"><sheets><sheet name="Data" sheetId="1" r:id="rId1"/><sheet name="Scores" sheetId="2" r:id="rId2"/></sheets><calcPr fullCalcOnLoad="1"/></workbook>'},
+{name:'xl/_rels/workbook.xml.rels',data:hdr+'<Relationships xmlns="'+ns+'package/2006/relationships"><Relationship Id="rId1" Type="'+ns+'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="'+ns+'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="'+ns+'officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+{name:'xl/styles.xml',data:hdr+'<styleSheet xmlns="'+ns+'spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs></styleSheet>'},
+{name:'xl/worksheets/sheet1.xml',data:sheetXml(data)},
+{name:'xl/worksheets/sheet2.xml',data:sheetXml(sheet2)}
+]);
+}
+return{build};
+})();
 
 function isMissingVal(v){
 return v===null||v===''||v===undefined||(typeof v==='number'&&Number.isNaN(v));
@@ -904,6 +1091,7 @@ default:return false;
 
 const ENGINE={
 score(model){
+model=materialize(model);
 const notes=[];
 const imputations=[];
 
@@ -1614,6 +1802,7 @@ return lines.join('\n');
 },
 modelJSON(model){return JSON.stringify(model,null,2);},
 spreadsheetCSV(model,result){
+model=materialize(model);
 const cols=model.criteria;
 const colLetters=cols.map((c,i)=>String.fromCharCode(66+i));
 const lastCol=colLetters[colLetters.length-1]||'B';
@@ -1780,8 +1969,9 @@ let pendingPaste=null;
 VIEWS.data={
 render(){
 const model=STORE.model;
+const mm=materialize(model);
 const heads=model.criteria.map((cr,ci)=>`<th data-c="${ci}" class="${cr.type==='categorical'||cr.type==='category'||(model.options.length&&model.options.every(o=>o.values[cr.id]==null||typeof o.values[cr.id]!=='number'))?'txt':''}"><div class="colhead">
-<span>${esc(cr.label)}${cr.unit?'<br><small>'+esc(cr.unit)+'</small>':''}</span>
+<span>${cr.formula?'\u0192 ':''}${esc(cr.label)}${cr.unit?'<br><small>'+esc(cr.unit)+'</small>':''}</span>
 <span><button class="mini" data-colop="dup" data-c="${ci}" title="Duplicate column">\u29c9</button><button class="mini" data-colop="del" data-c="${ci}" title="Remove column">\u2715</button></span>
 </div></th>`).join('');
 const rows=model.options.map((opt,ri)=>{
@@ -1790,9 +1980,9 @@ const labelCell=labelEditing
 ?`<input class="cellinput" id="cellEdit" value="${esc(opt.label)}">`
 :`<div class="cellbox lblbox" tabindex="0"><span class="lbltext">${esc(opt.label)}</span><span class="rowops"><button class="mini" data-rowop="up" data-r="${ri}" title="Move up" aria-label="Move up">\u2191</button><button class="mini" data-rowop="down" data-r="${ri}" title="Move down" aria-label="Move down">\u2193</button><button class="mini" data-rowop="dup" data-r="${ri}" title="Duplicate row" aria-label="Duplicate row">\u29c9</button><button class="mini del" data-rowop="del" data-r="${ri}" title="Remove row" aria-label="Remove row">\u2715</button></span></div>`;
 const cells=model.criteria.map((cr,ci)=>{
-const raw=opt.values[cr.id];
+const raw=cr.formula?mm.options[ri].values[cr.id]:opt.values[cr.id];
 const missing=raw===null||raw===undefined||raw==='';
-const editing=STORE.ui.editingCell&&STORE.ui.editingCell.r===ri&&STORE.ui.editingCell.c===ci;
+const editing=!cr.formula&&STORE.ui.editingCell&&STORE.ui.editingCell.r===ri&&STORE.ui.editingCell.c===ci;
 if(editing)return`<td data-r="${ri}" data-c="${ci}"><input class="cellinput" id="cellEdit" value="${missing?'':esc(String(raw))}"></td>`;
 const disp=missing?'\u2014':(typeof raw==='number'?fmt(raw,2):esc(String(raw)));
 return`<td data-r="${ri}" data-c="${ci}" class="${!missing&&typeof raw!=='number'?'txt':''}"><div class="cellbox${missing?' missing':''}" tabindex="0" title="${missing?'Missing value':''}">${disp}</div></td>`;
@@ -1984,6 +2174,7 @@ return`<div class="ccard" data-critcard="${cr.id}">
 <span class="badge ${relative?'rel':'abs'}">${relative?'Relative':'Absolute'}</span>
 <label class="flabel">Unit</label><input class="field" data-crit="${cr.id}" data-field="unit" value="${esc(cr.unit||'')}">
 <label class="flabel">Description</label><input class="field" data-crit="${cr.id}" data-field="description" value="${esc(cr.description||'')}">
+${formulaEditor(cr)}
 <label class="flabel">Direction</label>
 <div class="dirtoggle">
 <button data-crit="${cr.id}" data-field="direction" data-val="max" class="${cr.direction==='max'?'on':''}">Higher is better</button>
@@ -2268,6 +2459,7 @@ return'<li>'+esc(ANALYSIS.flipSentence(model,c,runnerUp,ft))+(ft.label==='numeri
 
 const tolRows=[];
 model.criteria.forEach(c=>{
+if(c.formula)return;
 const tolW=ANALYSIS.inputTolerance(model,winner.id,c.id,runnerUp.id);
 tolRows.push('<li>'+esc(ANALYSIS.toleranceSentence(model,winner,c,tolW))+'</li>');
 const tolR=ANALYSIS.inputTolerance(model,runnerUp.id,c.id,winner.id);
@@ -2334,6 +2526,7 @@ $('#v-record').innerHTML=`
 <button class="btn primary" id="copyRecordBtn">Copy record</button>
 <button class="btn" id="printRecordBtn">Print</button>
 <button class="btn" id="downloadModelBtn">Download model (.json)</button>
+<button class="btn" id="downloadXlsxBtn">Download workbook (.xlsx)</button>
 <button class="btn" id="downloadSheetBtn">Download spreadsheet rebuild (.csv)</button>
 <label class="btn ghost" style="cursor:pointer">Import model (.json)<input type="file" id="importModelInput" accept="application/json" style="display:none"></label>
 </div>
@@ -2822,6 +3015,20 @@ const c=EXPR.compile('if(x>3,1,x/3)',['x']);
 return EXPR.sheet(c.ast,{x:'B2'})==='IF((B2>3),1,(B2/3))';
 })());
 
+
+assert('calculated columns evaluate from other criteria in dependency order',(()=>{
+const m=fixture3x3(1);
+const base={unit:'',description:'',direction:'max',scale:{kind:'fixed-linear',params:{lo:0,hi:20}},weight:0,locked:false,missing:'exclude-option',uncertainty:{kind:'none',value:0}};
+m.criteria.push({...base,id:'d',label:'D',formula:'e2 + 1'});
+m.criteria.push({...base,id:'e2',label:'E2',formula:'a + b'});
+const mm=materialize(m);
+return mm.options[0].values.e2===15&&mm.options[0].values.d===16;
+})());
+assert('workbook export is a zip container',(()=>{
+const model=EXAMPLES.supplier,b=XLSX_W.build(model,ENGINE.score(model));
+return b[0]===0x50&&b[1]===0x4b&&b.length>1000;
+})());
+
 const pass=results.filter(r=>r.pass).length;
 const fail=results.length-pass;
 results.forEach(r=>console.log((r.pass?'PASS ':'FAIL ')+r.name));
@@ -3125,6 +3332,16 @@ if(e.target.matches('[data-pc][data-pf="type"]')){
 pendingPaste.detect[+e.target.dataset.pc].type=e.target.value;
 return;
 }
+const tpl=e.target.closest&&e.target.closest('[data-eqtpl]');
+if(tpl){
+const tid=tpl.dataset.eqtpl,t=(tid==='agg'?AGG_TEMPLATES:EQ_TEMPLATES)[tpl.value];
+if(!t)return;
+STORE.act('Apply template',model=>{
+if(tid==='agg'){model.aggregate.expr=t.e;model.aggregate.consts=deepClone(t.c);}
+else{const cr=model.criteria.find(c=>c.id===tid.slice(5));if(cr){cr.scale.params.expr=t.e;cr.scale.params.consts=deepClone(t.c);}}
+});
+return;
+}
 const aggField=e.target.closest('[data-agg]');
 if(aggField){
 const f=aggField.dataset.agg,val=aggField.value;
@@ -3152,6 +3369,7 @@ else if(field==='uncValue'){cr.uncertainty.value=Number(critField.value)||0;}
 else if(field==='label'){cr.label=critField.value;}
 else if(field==='unit'){cr.unit=critField.value;}
 else if(field==='description'){cr.description=critField.value;}
+else if(field==='formula'){const v=critField.value.trim();if(v)cr.formula=v;else delete cr.formula;}
 });
 return;
 }
@@ -3261,7 +3479,7 @@ VIEWS.data.handlePaste(text);
 document.addEventListener('input',e=>{
 if(e.target.matches&&e.target.matches('textarea.eq')){
 e.target.dataset.dirty='1';
-if(e.target.matches('[data-param="expr"],[data-agg="expr"]'))updateEqMsg(e.target);
+if(e.target.matches('[data-param="expr"],[data-agg="expr"],[data-field="formula"]'))updateEqMsg(e.target);
 }
 if(e.target.id==='ahpSlider'){
 const i=+e.target.dataset.i,j=+e.target.dataset.j,s=+e.target.value;
@@ -3444,6 +3662,11 @@ if(t.matches&&t.matches('textarea.eq')&&t.dataset.chip==='1'){
 t.dataset.chip='';
 t.dispatchEvent(new Event('change',{bubbles:true}));
 }
+});
+document.addEventListener('click',e=>{
+if(!e.target.closest('#downloadXlsxBtn'))return;
+const m=STORE.model;
+download((m.meta.id||'model')+'.xlsx',XLSX_W.build(m,ENGINE.score(m)),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 });
 }
 
