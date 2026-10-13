@@ -843,7 +843,7 @@ const p=cr.scale.params||{};
 const st=eqStatusFor(cr,stats);
 const tid='eq_'+cr.id;
 const chips=[...customNames(p).filter(n=>n!=='e'),'exp(','ln(','sqrt(','pow(','clamp(','if(','abs(','tanh(','min(','max('].map(n=>chipHtml(n,tid)).join('');
-return tplSelect('crit:'+cr.id,EQ_TEMPLATES)+'<label class="flabel">Equation \u00b7 f(x) \u2192 0 to 1</label><textarea class="field eq" id="'+tid+'" rows="2" spellcheck="false" data-crit="'+cr.id+'" data-param="expr">'+esc(p.expr===undefined?'x':p.expr)+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="'+cr.id+'">'+esc(st.text)+'</div><div class="eqchips">'+chips+'</div>';
+return'<button type="button" class="btn ghost" style="margin:0 0 10px" data-gbuild="'+cr.id+'">Build step by step</button>'+tplSelect('crit:'+cr.id,EQ_TEMPLATES)+'<label class="flabel">Equation \u00b7 f(x) \u2192 0 to 1</label><textarea class="field eq" id="'+tid+'" rows="2" spellcheck="false" data-crit="'+cr.id+'" data-param="expr">'+esc(p.expr===undefined?'x':p.expr)+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="'+cr.id+'">'+esc(st.text)+'</div><div class="eqchips">'+chips+'</div>';
 }
 function constsEditor(cr){
 const p=cr.scale.params||{};
@@ -1040,9 +1040,28 @@ tf=cc.ok?'MIN(100,MAX(0,100*('+EXPR.sheet(cc.ast,m)+')))':'NA()';
 else if(a.p===1)tf='SUMPRODUCT('+nr+','+wr+')/'+wsum+'*100';
 else if(a.p===0)tf='100*EXP(SUMPRODUCT('+wf+',LN('+fl+')))';
 else tf='100*SUMPRODUCT('+wf+','+fl+'^'+a.p+')^(1/'+a.p+')';
-row.push(tf===null?(app[o.id]!==undefined?{n:app[o.id]}:null):{f:tf});
+const gref=id=>{const gi=crit.findIndex(c=>c.id===id);return gi<0?'NA()':'Data!'+colOf(gi)+(ri+2);};
+const glit=v=>typeof v==='number'?String(v):typeof v==='boolean'?(v?'TRUE':'FALSE'):'"'+String(v).replace(/"/g,'""')+'"';
+const gate=cn=>{
+switch(cn.t){
+case'all':return'AND('+cn.of.map(gate).join(',')+')';
+case'any':return'OR('+cn.of.map(gate).join(',')+')';
+case'not':return'NOT('+gate(cn.of[0])+')';
+case'cmp':return'('+gref(cn.criterion)+({'==':'=','!=':'<>'}[cn.op]||cn.op)+glit(cn.value)+')';
+case'between':return'AND('+gref(cn.criterion)+'>='+glit(cn.lo)+','+gref(cn.criterion)+'<='+glit(cn.hi)+')';
+case'in':return'OR('+cn.values.map(v=>gref(cn.criterion)+'='+glit(v)).join(',')+')';
+case'tag':return(o.tags||[]).includes(cn.value)?'TRUE':'FALSE';
+case'missing':return'ISBLANK('+gref(cn.criterion)+')';
+default:return'TRUE';
+}
+};
+const pen=model.gates.filter(g=>g.severity!=='hard').map(g=>(g.penalty||0)+'*NOT('+gate(g.when)+')').join('+');
+row.push(tf===null?(app[o.id]!==undefined?{n:app[o.id]}:null):{f:'MIN(100,MAX(0,('+tf+')'+(pen?'-('+pen+')':'')+'))'});
 row.push({f:'IF('+sc+r+'<>"","",1+COUNTIFS($'+tc+'$3:$'+tc+'$'+last+',">"&'+tc+r+',$'+sc+'$3:$'+sc+'$'+last+',""))'});
-row.push(ex[o.id]?{s:ex[o.id]}:null);
+const inc=crit.map((c,ci)=>c.missing==='exclude-option'?(c.formula?'ISERROR(':'ISBLANK(')+'Data!'+colOf(ci)+(ri+2)+')':null).filter(Boolean);
+let sf=model.gates.filter(g=>g.severity==='hard').reduceRight((acc,g)=>'IF(NOT('+gate(g.when)+'),"Excluded: '+g.label.replace(/"/g,'""')+'",'+acc+')','""');
+if(inc.length)sf='IF(OR('+inc.join(',')+'),"Incomplete data",'+sf+')';
+row.push({f:sf});
 row.push(app[o.id]!==undefined?{n:app[o.id]}:null);
 sheet2.push(row);
 });
@@ -1060,6 +1079,90 @@ return zip([
 }
 return{build};
 })();
+
+
+const SHAPES=[
+{id:'line',n:'Straight line',d:'Score rises evenly across the range.',p:['lo','hi'],e:'clamp((x - lo) / (hi - lo), 0, 1)'},
+{id:'fast',n:'Fast gains, then flat',d:'Early gains count most; later ones add less.',p:['lo','hi','k'],e:'(1 - exp(-k * clamp((x - lo) / (hi - lo), 0, 1))) / (1 - exp(-k))'},
+{id:'slow',n:'Slow start, then fast',d:'Little credit at first, more near the top.',p:['lo','hi','power'],e:'clamp((x - lo) / (hi - lo), 0, 1) ^ power'},
+{id:'s',n:'S-curve around a midpoint',d:'Scores change quickly around the midpoint.',p:['mid','width'],e:'1 / (1 + exp(-(x - mid) / width))'},
+{id:'step',n:'Pass or fail at a limit',d:'Full marks at or above the limit, none below.',p:['limit'],e:'x >= limit ? 1 : 0'},
+{id:'peak',n:'Peak at a target',d:'Best at the target, falling off on either side.',p:['target','spread'],e:'exp(-((x - target) / spread) ^ 2)',noDir:true}
+];
+const PARAM_LABEL={lo:'Range starts at',hi:'Range ends at',k:'Steepness',power:'Power',mid:'Midpoint',width:'Width',limit:'Limit',target:'Target',spread:'Tolerance'};
+function openBuilder(critId){
+const model=STORE.model,cr=model.criteria.find(c=>c.id===critId);
+if(!cr)return;
+const st=ENGINE.score(model).stats.perCriterion[critId]||{};
+const lo=st.min!==undefined?st.min:0,hi=st.max!==undefined?st.max:1,span=(hi-lo)||1,mean=st.mean!==undefined?st.mean:lo+span/2;
+const r4=v=>Number(Number(v).toPrecision(4));
+const vals={lo:r4(lo),hi:r4(hi),k:3,power:2,mid:r4(mean),width:r4(span/8),limit:r4(mean),target:r4(mean),spread:r4(span/4)};
+let shape=SHAPES[0],lower=cr.direction==='min';
+const root=document.getElementById('modalRoot');
+const build=()=>{
+const e=(lower&&!shape.noDir)?'1 - ('+shape.e+')':shape.e;
+return{e,c:shape.p.map(k=>({name:k,value:Number(vals[k])}))};
+};
+const close=()=>{root.innerHTML='';root.onclick=root.onchange=root.oninput=root.onkeydown=root.onmousedown=null;};
+const draw=()=>{
+const{e,c}=build();
+const ok=c.every(q=>Number.isFinite(q.value));
+const comp=EXPR.compile(e,customNames({consts:c}));
+const plot=document.getElementById('gbPlot'),msg=document.getElementById('gbExpr'),okb=document.getElementById('gbOk');
+const env=ok?{...statEnv(st),...constEnv(c)}:{};
+const f=x=>{try{const v=comp.run({...env,x});return Number.isFinite(v)?clamp(v,0,1):null;}catch(er){return null;}};
+const xs=shape.p.map(k=>Number(vals[k])).filter(Number.isFinite).concat([lo,hi]);
+const a=Math.min(...xs)-span*.1,b=Math.max(...xs)+span*.1,W=300,H=120,P=8,BASE=H-P-14,SP=H-P*2-14;
+let d='',any=false,dots='';
+if(ok&&comp.ok){
+for(let i=0;i<=80;i++){
+const x=a+(b-a)*i/80,v=f(x);
+if(v===null)continue;
+any=true;
+d+=(d?'L':'M')+(P+(W-P*2)*i/80).toFixed(1)+' '+(BASE-v*SP).toFixed(1)+' ';
+}
+(st.values||[]).filter(v=>typeof v==='number').forEach(rv=>{
+const v=f(rv);
+if(v!==null)dots+='<circle class="dot" cx="'+(P+(W-P*2)*(rv-a)/((b-a)||1)).toFixed(1)+'" cy="'+(BASE-v*SP).toFixed(1)+'" r="2.5"></circle>';
+});
+}
+plot.innerHTML='<line class="axis" x1="'+P+'" y1="'+BASE+'" x2="'+(W-P)+'" y2="'+BASE+'"></line><line class="axis" x1="'+P+'" y1="'+P+'" x2="'+P+'" y2="'+BASE+'"></line><path class="curve" d="'+d.trim()+'"></path>'+dots;
+if(!ok){msg.className='eqmsg bad';msg.textContent='Enter a number in every field.';}
+else if(!any){msg.className='eqmsg bad';msg.textContent='These values give no result. Check the range.';}
+else{msg.className='eqmsg';msg.textContent=e+(c.length?'   with '+c.map(q=>q.name+' = '+q.value).join(', '):'');}
+okb.disabled=!(ok&&any);
+};
+const render=()=>{
+root.innerHTML='<div class="modalbg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="gbT" style="max-width:520px"><h2 id="gbT">Build an equation</h2><p class="viewsub" style="margin-bottom:10px">'+esc(cr.label)+(cr.unit?' ('+esc(cr.unit)+')':'')+'</p><label class="flabel">Shape</label><select class="field" id="gbShape">'+SHAPES.map(h=>'<option value="'+h.id+'"'+(h.id===shape.id?' selected':'')+'>'+esc(h.n)+'</option>').join('')+'</select><p class="viewsub" style="margin:-2px 0 8px">'+esc(shape.d)+'</p>'+(shape.noDir?'':'<label class="flabel">Direction</label><div class="dirtoggle"><button type="button" data-gbdir="max" class="'+(lower?'':'on')+'">Higher is better</button><button type="button" data-gbdir="min" class="'+(lower?'on':'')+'">Lower is better</button></div>')+'<div class="paramrow" style="flex-wrap:wrap;margin-top:10px">'+shape.p.map(k=>'<div style="flex:1 1 44%"><label class="flabel">'+PARAM_LABEL[k]+'</label><input class="field" type="number" step="any" data-gbp="'+k+'" value="'+vals[k]+'"></div>').join('')+'</div><svg class="curveplot" id="gbPlot" viewBox="0 0 300 120"></svg><div class="eqmsg" id="gbExpr"></div><div class="mactions"><button type="button" class="btn ghost" id="gbNo">Cancel</button><button type="button" class="btn primary" id="gbOk">Use equation</button></div></div></div>';
+upgradeControls();
+draw();
+};
+root.onclick=e=>{
+if(e.target.closest('#gbNo'))return close();
+const dir=e.target.closest('[data-gbdir]');
+if(dir){lower=dir.dataset.gbdir==='min';render();return;}
+if(e.target.closest('#gbOk')){
+const{e:ex,c}=build();
+if(!c.every(q=>Number.isFinite(q.value)))return;
+const wasLower=lower&&!shape.noDir;
+STORE.act('Build equation',m=>{
+const t=m.criteria.find(x=>x.id===critId);
+if(t){t.scale={kind:'custom',params:{expr:ex,consts:c}};t.direction=wasLower?'min':'max';}
+});
+close();
+}
+};
+root.onmousedown=e=>{if(e.target.classList.contains('modalbg'))close();};
+root.onchange=e=>{
+if(e.target.id==='gbShape'){shape=SHAPES.find(h=>h.id===e.target.value)||shape;render();}
+else if(e.target.dataset.gbp){vals[e.target.dataset.gbp]=e.target.value.trim()===''?NaN:Number(e.target.value);draw();}
+};
+root.oninput=e=>{if(e.target.dataset&&e.target.dataset.gbp){vals[e.target.dataset.gbp]=e.target.value.trim()===''?NaN:Number(e.target.value);draw();}};
+root.onkeydown=e=>{if(e.key==='Escape'&&!document.querySelector('.ddmenu'))close();};
+render();
+const first=document.querySelector('#gbShape ~ .ddbtn')||document.querySelector('.modal .ddbtn');
+if(first)first.focus();
+}
 
 function isMissingVal(v){
 return v===null||v===''||v===undefined||(typeof v==='number'&&Number.isNaN(v));
@@ -2185,7 +2288,7 @@ ${formulaEditor(cr)}
 ${Object.values(NORMALIZERS).map(n=>`<option value="${n.id}"${n.id===cr.scale.kind?' selected':''}>${n.label}</option>`).join('')}
 </select>
 <p class="viewsub" style="margin:-4px 0 8px">${esc(norm.blurb)}</p>
-${cr.scale.kind==='custom'?'':`<button type="button" class="btn ghost" style="margin:0 0 10px" data-mkcustom="crit:${cr.id}">\u0192 Write your own equation</button>`}
+${cr.scale.kind==='custom'?'':`<button type="button" class="btn ghost" style="margin:0 0 10px" data-mkcustom="crit:${cr.id}">\u0192 Write your own equation</button> <button type="button" class="btn ghost" style="margin:0 0 10px" data-gbuild="${cr.id}">Build step by step</button>`}
 ${paramFields}
 ${renderCurvePlot(cr,stats)}
 <label class="flabel">If missing</label>
@@ -2528,7 +2631,6 @@ $('#v-record').innerHTML=`
 <button class="btn" id="printRecordBtn">Print</button>
 <button class="btn" id="downloadModelBtn">Download model (.json)</button>
 <button class="btn" id="downloadXlsxBtn">Download workbook (.xlsx)</button>
-<button class="btn" id="downloadSheetBtn">Download spreadsheet rebuild (.csv)</button>
 <label class="btn ghost" style="cursor:pointer">Import model (.json)<input type="file" id="importModelInput" accept="application/json" style="display:none"></label>
 </div>
 <div class="panel" id="recordBody" style="white-space:pre-wrap;font-family:var(--mono);font-size:12px;line-height:1.6">${esc(md)}</div>
@@ -3029,6 +3131,8 @@ assert('workbook export is a zip container',(()=>{
 const model=EXAMPLES.supplier,b=XLSX_W.build(model,ENGINE.score(model));
 return b[0]===0x50&&b[1]===0x4b&&b.length>1000;
 })());
+
+assert('every guided-builder shape compiles to a valid equation',SHAPES.every(h=>EXPR.compile(h.e,customNames({consts:h.p.map(k=>({name:k}))})).ok));
 
 const pass=results.filter(r=>r.pass).length;
 const fail=results.length-pass;
@@ -3665,6 +3769,8 @@ t.dispatchEvent(new Event('change',{bubbles:true}));
 }
 });
 document.addEventListener('click',e=>{
+const g=e.target.closest('[data-gbuild]');
+if(g){openBuilder(g.dataset.gbuild);return;}
 const b=e.target.closest('[data-mkcustom]');
 if(!b)return;
 const t=b.dataset.mkcustom;
