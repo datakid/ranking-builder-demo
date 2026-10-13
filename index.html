@@ -859,7 +859,7 @@ const st=aggStatus(model);
 const chips=['wsum','wgeo','whm','wmin','wmax','wpow(','n'].map(n=>chipHtml(n,'eq_agg')).concat(model.criteria.map(c=>chipHtml(c.id,'eq_agg',c.label+' (score, 0 to 1)'))).concat(model.criteria.map(c=>chipHtml('w_'+c.id,'eq_agg',c.label+' (weight share)'))).concat((a.consts||[]).map(c=>chipHtml(c.name,'eq_agg'))).join('');
 extra=tplSelect('agg',AGG_TEMPLATES)+'<label class="flabel" style="margin-top:12px">Equation \u00b7 combine the criteria into one number from 0 to 1</label><textarea class="field eq" id="eq_agg" rows="2" spellcheck="false" data-agg="expr">'+esc(a.expr||'')+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="agg">'+esc(st.text)+'</div><div class="eqchips">'+chips+'</div><label class="flabel">Constants, one \u2018name:value\u2019 per line</label><textarea class="field eq" rows="2" spellcheck="false" data-agg="consts">'+esc(constLines(a.consts))+'</textarea>';
 }
-return'<div class="panel methodpanel"><label class="flabel">Scoring method</label><select class="field" data-agg="kind">'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===ch?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+extra+'</div>';
+return'<div class="panel methodpanel"><label class="flabel">Scoring method</label><select class="field" data-agg="kind">'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===ch?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+(a.kind==='custom'?'':'<button type="button" class="btn ghost" data-mkcustom="agg">\u0192 Write your own equation</button>')+extra+'</div>';
 }
 function updateEqMsg(ta){
 let key,st;
@@ -2185,6 +2185,7 @@ ${formulaEditor(cr)}
 ${Object.values(NORMALIZERS).map(n=>`<option value="${n.id}"${n.id===cr.scale.kind?' selected':''}>${n.label}</option>`).join('')}
 </select>
 <p class="viewsub" style="margin:-4px 0 8px">${esc(norm.blurb)}</p>
+${cr.scale.kind==='custom'?'':`<button type="button" class="btn ghost" style="margin:0 0 10px" data-mkcustom="crit:${cr.id}">\u0192 Write your own equation</button>`}
 ${paramFields}
 ${renderCurvePlot(cr,stats)}
 <label class="flabel">If missing</label>
@@ -3662,6 +3663,15 @@ if(t.matches&&t.matches('textarea.eq')&&t.dataset.chip==='1'){
 t.dataset.chip='';
 t.dispatchEvent(new Event('change',{bubbles:true}));
 }
+});
+document.addEventListener('click',e=>{
+const b=e.target.closest('[data-mkcustom]');
+if(!b)return;
+const t=b.dataset.mkcustom;
+STORE.act('Write custom equation',model=>{
+if(t==='agg'){const a=model.aggregate;a.kind='custom';a.expr=a.expr||'0.7 * wsum + 0.3 * wmin';a.consts=a.consts||[];}
+else{const cr=model.criteria.find(c=>c.id===t.slice(5));if(cr)cr.scale={kind:'custom',params:{expr:'(x - min) / (max - min)',consts:[]}};}
+});
 });
 document.addEventListener('click',e=>{
 if(!e.target.closest('#downloadXlsxBtn'))return;
