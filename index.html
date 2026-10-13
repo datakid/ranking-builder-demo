@@ -322,6 +322,68 @@ table.grid input.cellinput{background:var(--paper);box-shadow:inset 0 0 0 2px va
 .brand svg{width:26px;height:26px}
 .view h1{font-size:26px}
 }
+.dd{position:relative;display:inline-block;min-width:0}
+.dd select{position:absolute;inset:0;opacity:0;pointer-events:none;width:100%;height:100%}
+.dd-field{display:block}
+.ddbtn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:7px 12px;font:600 12px var(--sans);color:var(--ink);text-align:left;box-shadow:var(--shadow-1);transition:border-color .16s,background .16s,box-shadow .16s}
+.dd-field .ddbtn{background:var(--paper);border-radius:10px;font-weight:500;font-family:var(--mono);font-size:12.5px;padding:7px 10px;box-shadow:none;margin:2px 0 8px}
+.ddbtn:hover:not(:disabled){border-color:rgba(107,85,150,.4)}
+.ddbtn:disabled{opacity:.4;cursor:default}
+.ddbtn[aria-expanded=true]{border-color:var(--focus);box-shadow:var(--ring)}
+.ddbtn svg{width:12px;height:12px;flex:none;opacity:.6;transition:transform .16s}
+.ddbtn[aria-expanded=true] svg{transform:rotate(180deg)}
+.ddbtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ddmenu{position:fixed;z-index:90;max-height:280px;overflow:auto;padding:5px;background:var(--paper);border:1px solid var(--line-2);border-radius:16px;box-shadow:0 24px 50px -20px rgba(40,25,80,.45);animation:rb-pop .16s var(--ease)}
+.ddopt{display:flex;align-items:center;gap:8px;padding:7px 11px;border-radius:10px;font-size:12.5px;cursor:pointer;color:var(--ink);white-space:nowrap}
+.ddopt.hot{background:var(--accent-soft)}
+.ddopt.sel{color:var(--accent);font-weight:700}
+.ddopt.sel::after{content:"\2713";margin-left:auto;padding-left:14px}
+.numf{display:flex;align-items:stretch;border:1px solid var(--line-2);background:var(--paper);border-radius:10px;overflow:hidden;transition:border-color .16s,box-shadow .16s;width:100%}
+.numf:focus-within{border-color:var(--focus);box-shadow:var(--ring)}
+.numf input{flex:1;min-width:0;border:none!important;background:none!important;box-shadow:none!important;border-radius:0!important;margin:0!important;padding:6px 8px!important;text-align:right;outline:none!important}
+.numf button{border:none;background:none;width:26px;color:var(--ink-mu);font-size:14px;line-height:1;padding:0;transition:background .14s,color .14s}
+.numf button:hover:not(:disabled){background:var(--accent-soft);color:var(--accent)}
+.numf button:disabled{cursor:default}
+.numf.dis{opacity:.45}
+.ccard .numf{margin:2px 0 8px}
+.paramrow>.dd,.paramrow>.numf{flex:1}
+.paramrow .dd-field .ddbtn,.paramrow .numf{margin-bottom:8px}
+.directrow .numf{margin:0}
+input[type=range]{-webkit-appearance:none;appearance:none;height:22px;background:none;--p:50%;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--p),var(--paper-2) var(--p));box-shadow:inset 0 0 0 1px var(--line)}
+input[type=range]::-moz-range-track{height:6px;border-radius:999px;background:var(--paper-2);box-shadow:inset 0 0 0 1px var(--line)}
+input[type=range]::-moz-range-progress{height:6px;border-radius:999px;background:var(--accent)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-6px;border-radius:50%;background:var(--paper);border:2px solid var(--accent);box-shadow:var(--shadow-1);transition:transform .14s}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--accent)}
+input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.12)}
+input[type=range]:focus-visible{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:var(--ring)}
+input[type=range]:disabled{opacity:.4;cursor:default}
+input.field,textarea.field{width:100%;border:1px solid var(--line-2);background:var(--paper);border-radius:10px;padding:7px 10px;font-size:12.5px;transition:border-color .16s,box-shadow .16s}
+input.field:focus,textarea.field:focus{outline:none;border-color:var(--focus);box-shadow:var(--ring)}
+textarea.eq{font-family:var(--mono);font-size:12.5px;line-height:1.5;resize:vertical;min-height:54px;margin-bottom:6px}
+.eqmsg{font-size:11.5px;margin:0 0 8px;font-family:var(--mono);color:var(--ink-mu);min-height:16px}
+.eqmsg.bad{color:var(--bad)}
+.eqmsg.good{color:var(--ok)}
+.eqchips{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 10px}
+.eqchip{border:1px solid var(--line-2);background:var(--paper);border-radius:8px;padding:2px 8px;font:600 11px var(--mono);color:var(--ink-mu);transition:background .14s,color .14s,border-color .14s}
+.eqchip:hover{background:var(--accent-soft);color:var(--accent);border-color:rgba(107,85,150,.4)}
+.linkbtn{border:none;background:none;color:var(--accent);font-weight:700;padding:0;text-decoration:underline;text-underline-offset:2px}
+.methodpanel{margin-bottom:16px}
+.tooltip{max-width:260px;line-height:1.4}
+.modal .mactions{margin-top:18px}
+.dd-hdr{flex:none;width:auto}
+.dd-hdr .ddbtn{width:auto;min-width:148px;white-space:nowrap}
+header .iconbtn,#testBadge{flex:none;white-space:nowrap}
+.brand,.brand span{flex:none;white-space:nowrap}
+@media (max-width:1100px){
+header{flex-wrap:wrap;row-gap:8px}
+.brand span{display:none}
+nav.tabs{order:3;width:100%;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{flex:1;white-space:nowrap}
+}
+@media (max-width:520px){.dd-hdr .ddbtn{min-width:120px}}
 </style>
 </head>
 <body>
@@ -552,6 +614,266 @@ sheet(p,stats,ref){return`=IF(${ref},1,0)`;}
 };
 
 
+
+const EXPR=(function(){
+const FN={abs:Math.abs,sqrt:Math.sqrt,exp:Math.exp,ln:Math.log,log10:Math.log10,log2:Math.log2,pow:Math.pow,min:Math.min,max:Math.max,floor:Math.floor,ceil:Math.ceil,round:Math.round,sign:Math.sign,tanh:Math.tanh,sin:Math.sin,cos:Math.cos,atan:Math.atan,clamp:(v,a,b)=>Math.min(b,Math.max(a,v)),if:(c,a,b)=>c?a:b};
+const LV=[['||'],['&&'],['<','<=','>','>=','==','!='],['+','-'],['*','/','%']];
+const cache=new Map();
+function parse(src,extra){
+const toks=[];
+const re=/\s*(?:(\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+)|([A-Za-z_]\w*)|(\*\*|<=|>=|==|!=|&&|\|\||[-+*\/%^(),<>!?:]))/y;
+let pos=0,m;
+while(pos<src.length){
+re.lastIndex=pos;m=re.exec(src);
+if(!m){if(/^\s*$/.test(src.slice(pos)))break;throw new Error('Unexpected character \u201c'+src.slice(pos).trim()[0]+'\u201d');}
+pos=re.lastIndex;
+toks.push(m[1]!==undefined?{t:'n',v:parseFloat(m[1])}:m[2]!==undefined?{t:'i',v:m[2]}:{t:'o',v:m[3]});
+}
+let i=0;
+const eat=v=>{const k=toks[i];if(k&&k.t==='o'&&k.v===v){i++;return true;}return false;};
+const need=v=>{if(!eat(v))throw new Error('Expected \u201c'+v+'\u201d'+(toks[i]?' before \u201c'+toks[i].v+'\u201d':' at the end'));};
+function tern(){const c=lvl(0);if(eat('?')){const a=tern();need(':');const b=tern();return{k:'if',c,a,b};}return c;}
+function lvl(n){
+if(n===LV.length)return un();
+let l=lvl(n+1);
+for(;;){const k=toks[i];if(k&&k.t==='o'&&LV[n].includes(k.v)){i++;l={k:'b',o:k.v,l,r:lvl(n+1)};}else return l;}
+}
+function un(){
+if(eat('-'))return{k:'u',o:'-',a:un()};
+if(eat('+'))return un();
+if(eat('!'))return{k:'u',o:'!',a:un()};
+const b=pr();
+if(eat('^')||eat('**'))return{k:'b',o:'^',l:b,r:un()};
+return b;
+}
+function pr(){
+const k=toks[i++];
+if(!k)throw new Error('The equation ends too early');
+if(k.t==='n')return{k:'n',v:k.v};
+if(k.t==='i'){
+if(eat('(')){
+const a=[];
+if(!eat(')')){do a.push(tern());while(eat(','));need(')');}
+if(!FN[k.v]&&!(extra||[]).includes(k.v))throw new Error('Unknown function \u201c'+k.v+'\u201d');
+return{k:'f',n:k.v,a};
+}
+return{k:'v',n:k.v};
+}
+if(k.v==='('){const e=tern();need(')');return e;}
+throw new Error('Unexpected \u201c'+k.v+'\u201d');
+}
+const ast=tern();
+if(i<toks.length)throw new Error('Unexpected \u201c'+toks[i].v+'\u201d');
+return ast;
+}
+function walk(n,s){
+if(n.k==='v')s.add(n.n);
+else if(n.k==='u')walk(n.a,s);
+else if(n.k==='b'){walk(n.l,s);walk(n.r,s);}
+else if(n.k==='if'){walk(n.c,s);walk(n.a,s);walk(n.b,s);}
+else if(n.k==='f')n.a.forEach(a=>walk(a,s));
+}
+function ev(n,env){
+switch(n.k){
+case'n':return n.v;
+case'v':{const v=env[n.n];if(v===undefined)throw new Error('Unknown name \u201c'+n.n+'\u201d');return v;}
+case'u':return n.o==='-'?-ev(n.a,env):(ev(n.a,env)?0:1);
+case'b':{
+const l=ev(n.l,env);
+if(n.o==='&&')return l&&ev(n.r,env)?1:0;
+if(n.o==='||')return l||ev(n.r,env)?1:0;
+const r=ev(n.r,env);
+switch(n.o){
+case'+':return l+r;case'-':return l-r;case'*':return l*r;case'/':return l/r;case'%':return l%r;case'^':return Math.pow(l,r);
+case'<':return l<r?1:0;case'<=':return l<=r?1:0;case'>':return l>r?1:0;case'>=':return l>=r?1:0;case'==':return l===r?1:0;
+default:return l!==r?1:0;
+}
+}
+case'if':return ev(n.c,env)?ev(n.a,env):ev(n.b,env);
+default:{const f=(env.__fn&&env.__fn[n.n])||FN[n.n];return f(...n.a.map(a=>ev(a,env)));}
+}
+}
+function compile(src,names,extra){
+const key=src+'\u0001'+(names||[]).join(',')+'\u0001'+(extra||[]).join(',');
+if(cache.has(key))return cache.get(key);
+let r;
+try{
+if(!String(src).trim())throw new Error('The equation is empty');
+const ast=parse(String(src),extra);
+const vars=new Set();walk(ast,vars);
+if(names)for(const v of vars)if(!names.includes(v))throw new Error('Unknown name \u201c'+v+'\u201d');
+r={ok:true,ast,vars,run:env=>ev(ast,env)};
+}catch(e){r={ok:false,error:e.message};}
+if(cache.size>400)cache.clear();
+cache.set(key,r);
+return r;
+}
+const XL={ln:'LN',log10:'LOG10',pow:'POWER',abs:'ABS',sqrt:'SQRT',exp:'EXP',min:'MIN',max:'MAX',floor:'INT',sign:'SIGN',tanh:'TANH',sin:'SIN',cos:'COS',atan:'ATAN'};
+function sheet(n,m){
+switch(n.k){
+case'n':return String(n.v);
+case'v':return m[n.n]!==undefined?m[n.n]:n.n;
+case'u':return n.o==='-'?'-('+sheet(n.a,m)+')':'NOT('+sheet(n.a,m)+')';
+case'if':return'IF('+sheet(n.c,m)+','+sheet(n.a,m)+','+sheet(n.b,m)+')';
+case'b':{
+const l=sheet(n.l,m),r=sheet(n.r,m);
+if(n.o==='&&')return'AND('+l+','+r+')';
+if(n.o==='||')return'OR('+l+','+r+')';
+if(n.o==='%')return'MOD('+l+','+r+')';
+if(n.o==='==')return'('+l+'='+r+')';
+if(n.o==='!=')return'('+l+'<>'+r+')';
+return'('+l+n.o+r+')';
+}
+default:{
+const a=n.a.map(t=>sheet(t,m));
+if(n.n==='clamp')return'MIN('+a[2]+',MAX('+a[1]+','+a[0]+'))';
+if(n.n==='log2')return'LOG('+a[0]+',2)';
+if(n.n==='ceil')return'ROUNDUP('+a[0]+',0)';
+if(n.n==='round')return'ROUND('+a[0]+',0)';
+return(XL[n.n]||n.n.toUpperCase())+'('+a.join(',')+')';
+}
+}
+}
+return{compile,sheet};
+})();
+
+const CUSTOM_STAT_NAMES=['x','min','max','mean','median','std','n','sum','pi','e'];
+function statEnv(stats){
+const v=((stats&&stats.values)||[]).filter(t=>typeof t==='number');
+const n=v.length,s=sum(v),m=n?s/n:0,so=[...v].sort((a,b)=>a-b);
+return{
+min:stats&&stats.min!==undefined?stats.min:0,max:stats&&stats.max!==undefined?stats.max:0,
+mean:m,median:n?(n%2?so[(n-1)/2]:(so[n/2-1]+so[n/2])/2):0,
+std:n?Math.sqrt(sum(v.map(t=>(t-m)*(t-m)))/n):0,n,sum:s,pi:Math.PI,e:Math.E
+};
+}
+function constEnv(list){
+const o={};
+(list||[]).forEach(c=>{if(c&&c.name&&Number.isFinite(c.value))o[c.name]=c.value;});
+return o;
+}
+function parseConsts(text){
+const out=[],seen=new Set();
+String(text).split('\n').map(l=>l.trim()).filter(Boolean).forEach(l=>{
+const m=/^([A-Za-z_]\w*)\s*[:=]\s*(-?[\d.]+(?:[eE][+-]?\d+)?)$/.exec(l);
+if(m&&!seen.has(m[1])&&!CUSTOM_STAT_NAMES.includes(m[1])&&Number.isFinite(Number(m[2]))){seen.add(m[1]);out.push({name:m[1],value:Number(m[2])});}
+});
+return out;
+}
+function constLines(list){return(list||[]).map(c=>c.name+': '+c.value).join('\n');}
+function customNames(p){return[...CUSTOM_STAT_NAMES,...(p.consts||[]).map(c=>c.name)];}
+function dirApplies(cr){
+return cr.direction==='min'&&cr.scale.kind!=='decay'&&cr.scale.kind!=='target-band'&&cr.scale.kind!=='custom';
+}
+function isRelative(cr){
+if(['linear','log-linear','percentile'].includes(cr.scale.kind))return true;
+if(cr.scale.kind!=='custom')return false;
+const c=EXPR.compile((cr.scale.params&&cr.scale.params.expr)||'x',null);
+return!!(c.ok&&['min','max','mean','median','std','n','sum'].some(k=>c.vars.has(k)));
+}
+NORMALIZERS.custom={
+id:'custom',label:'Custom equation',
+blurb:'Write your own value function. x is the raw value; min, max, mean, median, std, n and sum describe the column. Output 0 to 1, and encode direction in the equation itself.',
+params:[{key:'expr',label:'Equation',type:'equation',default:'(x - min) / (max - min)'},{key:'consts',label:'Constants',type:'consts',default:[]}],
+needs:'numeric',
+fn(x,p,stats){
+const c=EXPR.compile(p.expr||'x',customNames(p));
+if(!c.ok)throw new Error(c.error);
+const v=c.run({...statEnv(stats),...constEnv(p.consts),x});
+if(!Number.isFinite(v))throw new Error('The equation gives no number at x = '+x);
+return{v:clamp(v,0,1),flag:(v<0||v>1)?'Equation output clamped to 0\u20131.':null};
+},
+inverse(){return null;},
+latex(p){return'\\text{'+(p.expr||'x')+'}';},
+plain(p){return p.expr||'x';},
+sheet(p,stats,ref){
+const c=EXPR.compile(p.expr||'x',customNames(p));
+if(!c.ok)return'=NA()';
+const env={...statEnv(stats),...constEnv(p.consts)},m={};
+Object.keys(env).forEach(k=>{m[k]=String(Math.round(env[k]*1e6)/1e6);});
+m.x=ref;
+return'=MIN(1,MAX(0,'+EXPR.sheet(c.ast,m)+'))';
+}
+};
+
+function aggNames(model){
+const ids=model.criteria.map(c=>c.id);
+return[...ids,...ids.map(i=>'w_'+i),'wsum','wgeo','whm','wmin','wmax','n','pi','e',...((model.aggregate.consts||[]).map(c=>c.name))];
+}
+function aggEnv(model,nv,wFrac){
+const crit=model.criteria;
+let ws=0,lg=0,hm=0,mn=Infinity,mx=-Infinity;
+const env={n:crit.length,pi:Math.PI,e:Math.E,...constEnv(model.aggregate.consts)};
+crit.forEach(c=>{
+const raw=nv[c.id],v=raw===null?0:raw,w=wFrac[c.id]||0;
+env[c.id]=v;env['w_'+c.id]=w;
+ws+=w*v;
+const vv=Math.max(v,0.001);
+lg+=w*Math.log(vv);hm+=w/vv;
+if(w>0&&raw!==null){mn=Math.min(mn,v);mx=Math.max(mx,v);}
+});
+env.wsum=ws;env.wgeo=Math.exp(lg);env.whm=hm?1/hm:0;
+env.wmin=Number.isFinite(mn)?mn:0;env.wmax=Number.isFinite(mx)?mx:0;
+env.__fn={wpow:p=>p===0?env.wgeo:Math.pow(crit.reduce((a,c)=>a+(wFrac[c.id]||0)*Math.pow(Math.max(env[c.id],0.001),p),0),1/p)};
+return env;
+}
+function aggStatus(model,src){
+const c=EXPR.compile(src===undefined?(model.aggregate.expr||''):src,aggNames(model),['wpow']);
+return c.ok?{cls:'good',text:'Valid equation. It applies when you leave the field.'}:{cls:'bad',text:c.error};
+}
+function eqStatusFor(cr,stats,src){
+const p=cr.scale.params||{};
+const s=src===undefined?(p.expr===undefined?'x':p.expr):src;
+const c=EXPR.compile(s,customNames(p));
+if(!c.ok)return{cls:'bad',text:c.error};
+const xs=((stats&&stats.values)||[]).filter(v=>typeof v==='number');
+const x0=xs.length?xs[0]:0;
+try{
+const v=c.run({...statEnv(stats||{}),...constEnv(p.consts),x:x0});
+if(!Number.isFinite(v))return{cls:'bad',text:'No number at x = '+x0};
+return{cls:'good',text:'x = '+fmt(x0,2)+' \u2192 '+v.toFixed(3)+(v<0||v>1?' (clamped to 0\u20131)':'')};
+}catch(e){return{cls:'bad',text:e.message};}
+}
+function chipHtml(n,target,tip){
+return'<button type="button" class="eqchip" data-ins="'+esc(n)+'" data-target="'+target+'"'+(tip?' data-tip="'+esc(tip)+'"':'')+'>'+esc(n)+'</button>';
+}
+function eqEditor(cr,stats){
+const p=cr.scale.params||{};
+const st=eqStatusFor(cr,stats);
+const tid='eq_'+cr.id;
+const chips=[...customNames(p).filter(n=>n!=='e'),'exp(','ln(','sqrt(','pow(','clamp(','if(','abs(','tanh(','min(','max('].map(n=>chipHtml(n,tid)).join('');
+return'<label class="flabel">Equation \u00b7 f(x) \u2192 0 to 1</label><textarea class="field eq" id="'+tid+'" rows="2" spellcheck="false" data-crit="'+cr.id+'" data-param="expr">'+esc(p.expr===undefined?'x':p.expr)+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="'+cr.id+'">'+esc(st.text)+'</div><div class="eqchips">'+chips+'</div>';
+}
+function constsEditor(cr){
+const p=cr.scale.params||{};
+return'<label class="flabel">Constants, one \u2018name:value\u2019 per line</label><textarea class="field eq" rows="2" spellcheck="false" data-crit="'+cr.id+'" data-param="consts">'+esc(constLines(p.consts))+'</textarea>';
+}
+function aggChoice(a){return a.kind==='custom'?'custom':a.kind==='topsis'?'topsis':String(a.p);}
+function renderMethodPanel(model){
+const a=model.aggregate,ch=aggChoice(a);
+const opts=[['1','Weighted sum'],['0','Geometric mean'],['-1','Harmonic mean'],['topsis','TOPSIS closeness'],['custom','Custom equation']];
+let extra='';
+if(a.kind==='custom'){
+const st=aggStatus(model);
+const chips=['wsum','wgeo','whm','wmin','wmax','wpow(','n'].map(n=>chipHtml(n,'eq_agg')).concat(model.criteria.map(c=>chipHtml(c.id,'eq_agg',c.label+' (score, 0 to 1)'))).concat(model.criteria.map(c=>chipHtml('w_'+c.id,'eq_agg',c.label+' (weight share)'))).concat((a.consts||[]).map(c=>chipHtml(c.name,'eq_agg'))).join('');
+extra='<label class="flabel" style="margin-top:12px">Equation \u00b7 combine the criteria into one number from 0 to 1</label><textarea class="field eq" id="eq_agg" rows="2" spellcheck="false" data-agg="expr">'+esc(a.expr||'')+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="agg">'+esc(st.text)+'</div><div class="eqchips">'+chips+'</div><label class="flabel">Constants, one \u2018name:value\u2019 per line</label><textarea class="field eq" rows="2" spellcheck="false" data-agg="consts">'+esc(constLines(a.consts))+'</textarea>';
+}
+return'<div class="panel methodpanel"><label class="flabel">Scoring method</label><select class="field" data-agg="kind">'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===ch?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+extra+'</div>';
+}
+function updateEqMsg(ta){
+const box=ta.parentNode.querySelector('[data-eqmsg]');
+if(!box)return;
+let st;
+if(ta.dataset.agg)st=aggStatus(STORE.model,ta.value);
+else{
+const cr=STORE.model.criteria.find(c=>c.id===ta.dataset.crit);
+if(!cr)return;
+st=eqStatusFor(cr,ENGINE.score(STORE.model).stats.perCriterion[cr.id],ta.value);
+}
+box.className='eqmsg '+st.cls;
+box.textContent=st.text;
+}
+
 function isMissingVal(v){
 return v===null||v===''||v===undefined||(typeof v==='number'&&Number.isNaN(v));
 }
@@ -618,6 +940,7 @@ if(v===null)missing=true;
 }catch(e){
 missing=true;
 flag=e.message;
+notes.push(cr.label+': '+e.message+' ('+opt.label+')');
 }
 }
 if(missing){
@@ -630,7 +953,7 @@ else if(policy==='redistribute'){v=null;imputations.push({optionId:opt.id,criter
 else{v=null;imputations.push({optionId:opt.id,criterionId:cr.id,policy:'exclude-option',valueUsed:null});}
 }else{
 if(flag)notes.push(`${cr.label}: ${flag} (${opt.label})`);
-if(cr.direction==='min'&&cr.scale.kind!=='decay'&&cr.scale.kind!=='target-band'){
+if(dirApplies(cr)){
 v=1-v;
 }
 }
@@ -687,7 +1010,22 @@ const contributions={};
 let total;
 const p=model.aggregate.kind==='topsis'?1:model.aggregate.p;
 
-if(p===0){
+if(model.aggregate.kind==='custom'){
+const ac=EXPR.compile(model.aggregate.expr||'wsum',aggNames(model),['wpow']);
+let t=0;
+if(!ac.ok){const m='Custom equation: '+ac.error;if(!notes.includes(m))notes.push(m);}
+else{
+try{t=ac.run(aggEnv(model,normValues[opt.id],wFrac));}
+catch(e){const m='Custom equation: '+e.message;if(!notes.includes(m))notes.push(m);}
+if(!Number.isFinite(t))t=0;
+if(t<0||t>1){const m='Custom equation returned values outside 0\u20131; scores were clamped.';if(!notes.includes(m))notes.push(m);}
+}
+critList.forEach(c=>{
+const v=normValues[opt.id][c.id];
+contributions[c.id]=v===null?{v:null,weighted:0,pctOfTotal:0}:{v,weighted:wFrac[c.id]*v,pctOfTotal:0};
+});
+total=t;
+}else if(p===0){
 let prod=1;
 critList.forEach(c=>{
 const v=normValues[opt.id][c.id];
@@ -1098,7 +1436,7 @@ model.options.forEach(o=>{shares[o.id]=validSamples?wins[o.id]/validSamples:0;})
 return{samples,validSamples,shares};
 }
 function rankReversalCheck(model,result){
-const hasRelative=model.criteria.some(c=>['linear','log-linear','percentile'].includes(c.scale.kind));
+const hasRelative=model.criteria.some(isRelative);
 if(!hasRelative||!result.winner)return null;
 const winnerId=result.winner.id;
 const flips=[];
@@ -1229,10 +1567,10 @@ lines.push('## Options considered');
 model.options.forEach(o=>lines.push('- '+o.label));
 lines.push('');
 lines.push('## Criteria');
-model.criteria.forEach(c=>lines.push('- **'+c.label+'** ('+(c.unit||'\u2014')+'), '+c.direction+' is better, '+NORMALIZERS[c.scale.kind].label+', weight '+c.weight+' pts'));
+model.criteria.forEach(c=>lines.push('- **'+c.label+'** ('+(c.unit||'\u2014')+'), '+c.direction+' is better, '+NORMALIZERS[c.scale.kind].label+(c.scale.kind==='custom'?' ['+c.scale.params.expr+']':'')+', weight '+c.weight+' pts'));
 lines.push('');
 lines.push('## Method');
-lines.push('Aggregation: '+model.aggregate.kind+(model.aggregate.kind==='power-mean'?' (p='+model.aggregate.p+')':''));
+lines.push('Aggregation: '+model.aggregate.kind+(model.aggregate.kind==='power-mean'?' (p='+model.aggregate.p+')':'')+(model.aggregate.kind==='custom'?' = '+model.aggregate.expr:''));
 lines.push('');
 if(model.gates.length){
 lines.push('## Gates');
@@ -1270,7 +1608,7 @@ lines.push('');
 }
 lines.push('## Assumptions and limitations');
 lines.push('- Scores are relative to the criteria and weights defined in this model, not an absolute measure.');
-if(model.criteria.some(c=>['linear','log-linear','percentile'].includes(c.scale.kind)))lines.push('- Some criteria use relative scoring, so adding or removing options can change every score.');
+if(model.criteria.some(isRelative))lines.push('- Some criteria use relative scoring, so adding or removing options can change every score.');
 if(model.criteria.every(c=>c.uncertainty.kind==='none'))lines.push('- No uncertainty was declared on any criterion; all inputs are treated as exact.');
 return lines.join('\n');
 },
@@ -1297,7 +1635,8 @@ model.options.forEach((o,ri)=>{
 const row=normStartRow+ri;
 const cells=cols.map((c,ci)=>{
 const norm=NORMALIZERS[c.scale.kind];
-return norm.sheet(c.scale.params||{},result.stats.perCriterion[c.id],colLetters[ci]+row);
+const f=norm.sheet(c.scale.params||{},result.stats.perCriterion[c.id],colLetters[ci]+(3+ri));
+return dirApplies(c)?'=1-('+f.slice(1)+')':f;
 });
 const total='=SUMPRODUCT(B'+row+':'+lastCol+row+',$B$'+weightsRow+':$'+lastCol+'$'+weightsRow+')/100';
 lines.push([csvCell(o.label),...cells,total].join(','));
@@ -1509,6 +1848,7 @@ $('#modalRoot').innerHTML=`<div class="modalbg" id="pasteModalBg"><div class="mo
 </tr>`).join('')}</tbody></table>
 <div class="mactions"><button class="btn ghost" id="pasteCancel">Cancel</button><button class="btn primary" id="pasteConfirm">Import</button></div>
 </div></div>`;
+upgradeControls();
 },
 closeModal(){$('#modalRoot').innerHTML='';pendingPaste=null;},
 confirmPaste(){
@@ -1556,7 +1896,7 @@ toast('Imported '+body.length+' rows \u00d7 '+detect.length+' columns');
 function curveDomain(cr,stats){
 const p=cr.scale.params||{};
 const kind=cr.scale.kind;
-if(kind==='linear'||kind==='log-linear'||kind==='percentile'){
+if(kind==='linear'||kind==='log-linear'||kind==='percentile'||kind==='custom'){
 const lo=stats.min,hi=stats.max;
 if(lo===undefined||hi===undefined||lo===hi)return[0,1];
 const pad=(hi-lo)*.08;
@@ -1581,7 +1921,7 @@ try{
 const r=norm.fn(x,cr.scale.params||{},stats);
 let v=(typeof r==='object')?r.v:r;
 if(v===null)return null;
-if(cr.direction==='min'&&cr.scale.kind!=='decay'&&cr.scale.kind!=='target-band')v=1-v;
+if(dirApplies(cr))v=1-v;
 return v;
 }catch(e){return null;}
 }
@@ -1619,7 +1959,7 @@ return`<svg class="curveplot" viewBox="0 0 ${W} ${H}"><line class="axis" x1="${P
 }
 function renderCritCard(cr,stats,weightSum){
 const norm=NORMALIZERS[cr.scale.kind];
-const relative=cr.scale.kind==='linear'||cr.scale.kind==='log-linear'||cr.scale.kind==='percentile';
+const relative=isRelative(cr);
 const share=weightSum?(cr.weight/weightSum*100):0;
 const paramFields=(norm.params||[]).map(p=>{
 if(p.type==='number'){
@@ -1634,6 +1974,8 @@ if(p.type==='map'){
 const map=(cr.scale.params&&cr.scale.params.map)||{};
 return`<label class="flabel">Category points, one \u2018label:value\u2019 per line</label><textarea class="field" rows="3" data-crit="${cr.id}" data-param="map">${Object.keys(map).map(k=>k+':'+map[k]).join('\n')}</textarea>`;
 }
+if(p.type==='equation')return eqEditor(cr,stats);
+if(p.type==='consts')return constsEditor(cr);
 return'';
 }).join('');
 return`<div class="ccard" data-critcard="${cr.id}">
@@ -1887,6 +2229,7 @@ const notes=result.notes.length?`<div class="notesfoot"><b>Notes</b><ul>${result
 $('#v-rank').innerHTML=`
 <h1>Rank</h1>
 <p class="viewsub">Ordered by total score. Click a row for the full arithmetic; pin two rows to compare them directly.</p>
+${renderMethodPanel(model)}
 <div class="ranklist">${rows||'<p class="viewsub">No rankable options yet. Add data, or open an example model.</p>'}</div>
 ${h2h}
 ${excluded?`<div class="exsection"><h3>Excluded</h3>${excluded}</div>`:''}
@@ -2422,7 +2765,7 @@ const norm=NORMALIZERS[c.scale.kind];
 let v;
 try{const r=norm.fn(o.values[c.id],c.scale.params||{},stats);v=(typeof r==='object')?r.v:r;}catch(e){v=0;}
 if(v===null)v=0;
-if(c.direction==='min'&&c.scale.kind!=='decay'&&c.scale.kind!=='target-band')v=1-v;
+if(dirApplies(c))v=1-v;
 total+=v*weights[ci];
 });
 if(!approx(total,entry.total,0.05))ok=false;
@@ -2445,6 +2788,38 @@ gates:[],aggregate:{kind:'power-mean',p:1,tiebreak:[]},presets:[],view:{sort:'sc
 const r=ENGINE.score(model);
 const rr=ANALYSIS.rankReversalCheck(model,r);
 return r.winner.id==='b'&&!!rr&&rr.flips.some(f=>f.removed.id==='c'&&f.newWinner.id==='a');
+})());
+
+
+assert('equation parser honours precedence and right-associative power',(()=>{
+const a=EXPR.compile('2+3*4^2',[]),b=EXPR.compile('-2^2',[]),c=EXPR.compile('2^3^2',[]);
+return a.ok&&a.run({})===50&&b.run({})===-4&&c.run({})===512;
+})());
+assert('equation parser rejects unknown names, unknown functions and broken syntax',(()=>{
+return!EXPR.compile('foo+1',['x']).ok&&!EXPR.compile('bar(1)',['x']).ok&&!EXPR.compile('1 +',['x']).ok;
+})());
+assert('custom value function reproduces the linear normalizer',(()=>{
+const st={min:2,max:12,values:[2,7,12]};
+return approx(NORMALIZERS.custom.fn(7,{expr:'(x - min) / (max - min)',consts:[]},st).v,NORMALIZERS.linear.fn(7,{},st).v);
+})());
+assert('custom value function honours named constants',(()=>{
+const p={expr:'1 - exp(-k * x)',consts:[{name:'k',value:2}]};
+return approx(NORMALIZERS.custom.fn(1,p,{min:0,max:1,values:[0,1]}).v,1-Math.exp(-2));
+})());
+assert('custom aggregate wsum equals the weighted sum',(()=>{
+const m=fixture3x3(1),base=ENGINE.score(m),c=deepClone(m);
+c.aggregate={kind:'custom',p:1,tiebreak:[],expr:'wsum',consts:[]};
+const r=ENGINE.score(c);
+return base.ranked.every(s=>approx(s.total,r.ranked.find(t=>t.option.id===s.option.id).total,1e-6));
+})());
+assert('custom aggregate blending wsum and wmin matches hand arithmetic',(()=>{
+const c=fixture3x3(1);
+c.aggregate={kind:'custom',p:1,tiebreak:[],expr:'0.5*wsum + 0.5*wmin',consts:[]};
+return approx(ENGINE.score(c).ranked.find(s=>s.option.id==='z').total,50,1e-6);
+})());
+assert('custom equation translates to a spreadsheet formula',(()=>{
+const c=EXPR.compile('if(x>3,1,x/3)',['x']);
+return EXPR.sheet(c.ast,{x:'B2'})==='IF((B2>3),1,(B2/3))';
 })());
 
 const pass=results.filter(r=>r.pass).length;
@@ -2497,8 +2872,8 @@ function renderAll(){
 $$('#tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.view===STORE.ui.activeView);});
 $$('.view').forEach(v=>{v.hidden=(v.id!=='v-'+STORE.ui.activeView);});
 const ub=$('#undoBtn'),rb=$('#redoBtn');
-if(ub){ub.disabled=!STORE.past.length;ub.title=STORE.past.length?('Undo: '+STORE.past[STORE.past.length-1].name):'Undo';}
-if(rb){rb.disabled=!STORE.future.length;rb.title=STORE.future.length?('Redo: '+STORE.future[STORE.future.length-1].name):'Redo';}
+if(ub){ub.disabled=!STORE.past.length;ub.dataset.tip=STORE.past.length?('Undo: '+STORE.past[STORE.past.length-1].name):'Undo';}
+if(rb){rb.disabled=!STORE.future.length;rb.dataset.tip=STORE.future.length?('Redo: '+STORE.future[STORE.future.length-1].name):'Redo';}
 if(STORE.ui.activeView==='data')VIEWS.data.render();
 else if(STORE.ui.activeView==='criteria')VIEWS.criteria.render();
 else if(STORE.ui.activeView==='weights')VIEWS.weights.render();
@@ -2652,7 +3027,7 @@ toast('Pairwise weights applied');
 }
 }
 else if((b=e.target.closest('#savePresetBtn'))){
-const name=(typeof prompt==='function')?prompt('Name this preset:'):null;
+askText('Name this preset','Preset name','Save').then(name=>{
 if(name){
 STORE.act('Save preset',model=>{
 const weights={};model.criteria.forEach(c=>{weights[c.id]=c.weight;});
@@ -2660,6 +3035,7 @@ model.presets.push({name,weights});
 });
 toast('Preset saved \u2014 '+name);
 }
+});
 }
 else if((b=e.target.closest('[data-applypreset]'))){
 const i=+b.dataset.applypreset;
@@ -2749,6 +3125,21 @@ if(e.target.matches('[data-pc][data-pf="type"]')){
 pendingPaste.detect[+e.target.dataset.pc].type=e.target.value;
 return;
 }
+const aggField=e.target.closest('[data-agg]');
+if(aggField){
+const f=aggField.dataset.agg,val=aggField.value;
+if(f==='expr'&&(STORE.model.aggregate.expr||'')===val)return;
+STORE.act('Edit scoring method',model=>{
+const a=model.aggregate;
+if(f==='kind'){
+if(val==='custom'){a.kind='custom';a.expr=a.expr||'0.7*wsum + 0.3*wmin';a.consts=a.consts||[];}
+else if(val==='topsis'){a.kind='topsis';}
+else{a.kind='power-mean';a.p=Number(val);}
+}else if(f==='expr'){a.expr=val;}
+else if(f==='consts'){a.consts=parseConsts(val);}
+});
+return;
+}
 const critField=e.target.closest('[data-crit][data-field]');
 if(critField){
 const id=critField.dataset.crit,field=critField.dataset.field;
@@ -2767,6 +3158,7 @@ return;
 const paramField=e.target.closest('[data-crit][data-param]');
 if(paramField){
 const id=paramField.dataset.crit,key=paramField.dataset.param;
+if(key==='expr'){const cur=STORE.model.criteria.find(c=>c.id===id);if(cur&&(cur.scale.params.expr||'')===paramField.value)return;}
 STORE.act('Edit parameter',model=>{
 const cr=model.criteria.find(c=>c.id===id);
 if(!cr.scale.params)cr.scale.params={};
@@ -2781,6 +3173,10 @@ const idx=l.lastIndexOf(':');
 if(idx>0){const k=l.slice(0,idx).trim(),v=Number(l.slice(idx+1).trim());if(k&&Number.isFinite(v))map[k]=v;}
 });
 cr.scale.params.map=map;
+}else if(key==='expr'){
+cr.scale.params.expr=paramField.value;
+}else if(key==='consts'){
+cr.scale.params.consts=parseConsts(paramField.value);
 }else{
 cr.scale.params[key]=Number(paramField.value);
 }
@@ -2791,6 +3187,7 @@ const directCtl=e.target.closest('[data-directid],[data-directnum]');
 if(directCtl){
 const id=directCtl.dataset.directid||directCtl.dataset.directnum;
 const value=Number(directCtl.value);
+if(!Number.isFinite(value)){VIEWS.weights.render();upgradeControls();return;}
 const res=WEIGHTS.applyDirect(STORE.model.criteria,id,value);
 if(res.ok){
 STORE.act('Set weight',model=>{
@@ -2862,6 +3259,10 @@ VIEWS.data.handlePaste(text);
 });
 
 document.addEventListener('input',e=>{
+if(e.target.matches&&e.target.matches('textarea.eq')){
+e.target.dataset.dirty='1';
+if(e.target.matches('[data-param="expr"],[data-agg="expr"]'))updateEqMsg(e.target);
+}
 if(e.target.id==='ahpSlider'){
 const i=+e.target.dataset.i,j=+e.target.dataset.j,s=+e.target.value;
 if(!STORE.ui.ahpJudgments)STORE.ui.ahpJudgments={};
@@ -2872,11 +3273,186 @@ if(lbl)lbl.textContent=ahpSliderText(s);
 });
 }
 
+
+const CHEV='<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>';
+let ddOpen=null;
+function closeDd(){
+if(!ddOpen)return;
+ddOpen.menu.remove();
+ddOpen.btn.setAttribute('aria-expanded','false');
+ddOpen=null;
+}
+function openDd(sel,btn){
+closeDd();
+const menu=document.createElement('div');
+menu.className='ddmenu';
+menu.setAttribute('role','listbox');
+const opts=Array.from(sel.options);
+let hot=Math.max(0,sel.selectedIndex);
+menu.innerHTML=opts.map((o,i)=>'<div class="ddopt'+(i===sel.selectedIndex?' sel':'')+'" role="option" data-i="'+i+'">'+esc(o.textContent)+'</div>').join('');
+document.body.appendChild(menu);
+const r=btn.getBoundingClientRect();
+menu.style.minWidth=r.width+'px';
+const mh=menu.offsetHeight,below=innerHeight-r.bottom;
+menu.style.left=Math.max(8,Math.min(r.left,innerWidth-menu.offsetWidth-8))+'px';
+menu.style.top=(below<mh+12&&r.top>below?Math.max(8,r.top-mh-6):r.bottom+6)+'px';
+btn.setAttribute('aria-expanded','true');
+const paint=()=>Array.from(menu.children).forEach((c,i)=>c.classList.toggle('hot',i===hot));
+const pick=i=>{
+if(i!==sel.selectedIndex){sel.selectedIndex=i;sel.dispatchEvent(new Event('change',{bubbles:true}));}
+closeDd();
+btn.focus();
+};
+menu.addEventListener('mousemove',e=>{const o=e.target.closest('.ddopt');if(o){hot=+o.dataset.i;paint();}});
+menu.addEventListener('mousedown',e=>e.preventDefault());
+menu.addEventListener('click',e=>{const o=e.target.closest('.ddopt');if(o)pick(+o.dataset.i);});
+ddOpen={menu,btn,sel,key(e){
+if(e.key==='ArrowDown')hot=Math.min(opts.length-1,hot+1);
+else if(e.key==='ArrowUp')hot=Math.max(0,hot-1);
+else if(e.key==='Enter'||e.key===' ')pick(hot);
+else if(e.key==='Escape'||e.key==='Tab'){closeDd();btn.focus();return;}
+else return;
+e.preventDefault();e.stopPropagation();
+if(ddOpen){paint();const h=menu.children[hot];if(h)h.scrollIntoView({block:'nearest'});}
+}};
+paint();
+const h0=menu.children[hot];
+if(h0)h0.scrollIntoView({block:'nearest'});
+}
+function upgradeSelects(){
+document.querySelectorAll('select:not([data-up])').forEach(sel=>{
+sel.dataset.up='1';
+const w=document.createElement('div');
+w.className='dd'+(sel.classList.contains('field')?' dd-field':'')+(sel.classList.contains('hdr')?' dd-hdr':'');
+const btn=document.createElement('button');
+btn.type='button';btn.className='ddbtn';
+btn.setAttribute('aria-haspopup','listbox');btn.setAttribute('aria-expanded','false');
+const lab=document.createElement('span');
+btn.appendChild(lab);
+btn.insertAdjacentHTML('beforeend',CHEV);
+const sync=()=>{const o=sel.options[sel.selectedIndex];lab.textContent=o?o.textContent:'';btn.disabled=sel.disabled;};
+sel.parentNode.insertBefore(w,sel);
+w.appendChild(btn);w.appendChild(sel);
+sel.tabIndex=-1;sel.setAttribute('aria-hidden','true');
+sync();
+sel.addEventListener('change',()=>setTimeout(sync,0));
+btn.addEventListener('click',()=>{if(ddOpen&&ddOpen.btn===btn)closeDd();else openDd(sel,btn);});
+btn.addEventListener('keydown',e=>{if(!ddOpen&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();openDd(sel,btn);}});
+});
+}
+function upgradeNumbers(){
+document.querySelectorAll('input[type=number]:not([data-up])').forEach(inp=>{
+inp.dataset.up='1';
+const step=inp.getAttribute('step'),min=inp.getAttribute('min'),max=inp.getAttribute('max');
+inp.type='text';inp.inputMode='decimal';inp.removeAttribute('step');
+const w=document.createElement('div');
+w.className='numf'+(inp.disabled?' dis':'');
+const bump=d=>{
+let v=Number(inp.value);
+if(!Number.isFinite(v))v=0;
+const s=step&&step!=='any'?Number(step):(Math.abs(v)>=10?1:Math.abs(v)>=1?0.5:0.1);
+let nv=Math.round((v+d*s)*1e6)/1e6;
+if(min!==null)nv=Math.max(Number(min),nv);
+if(max!==null)nv=Math.min(Number(max),nv);
+inp.value=String(nv);
+inp.dispatchEvent(new Event('change',{bubbles:true}));
+};
+const mk=(t,d)=>{
+const b=document.createElement('button');
+b.type='button';b.tabIndex=-1;b.textContent=t;b.disabled=inp.disabled;
+b.setAttribute('aria-label',d>0?'Increase':'Decrease');
+b.addEventListener('click',()=>bump(d));
+return b;
+};
+inp.parentNode.insertBefore(w,inp);
+w.append(mk('\u2212',-1),inp,mk('+',1));
+inp.addEventListener('keydown',e=>{
+if(e.key==='ArrowUp'){e.preventDefault();bump(1);}
+else if(e.key==='ArrowDown'){e.preventDefault();bump(-1);}
+});
+});
+}
+function upgradeRanges(){
+document.querySelectorAll('input[type=range]:not([data-up])').forEach(r=>{
+r.dataset.up='1';
+const set=()=>{const lo=+r.min,hi=+r.max;r.style.setProperty('--p',((r.value-lo)/((hi-lo)||1)*100)+'%');};
+set();
+r.addEventListener('input',set);
+});
+}
+function upgradeControls(){upgradeSelects();upgradeNumbers();upgradeRanges();}
+function askText(title,label,okLabel){
+return new Promise(res=>{
+const root=document.getElementById('modalRoot');
+root.innerHTML='<div class="modalbg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="askT" style="max-width:420px"><h2 id="askT">'+esc(title)+'</h2><label class="flabel" for="askIn">'+esc(label)+'</label><input class="field" id="askIn" autocomplete="off" style="margin-top:6px"><div class="mactions"><button class="btn ghost" id="askNo">Cancel</button><button class="btn primary" id="askOk">'+esc(okLabel||'Save')+'</button></div></div></div>';
+const inp=document.getElementById('askIn');
+inp.focus();
+const done=v=>{root.innerHTML='';res(v);};
+document.getElementById('askOk').onclick=()=>done(inp.value.trim()||null);
+document.getElementById('askNo').onclick=()=>done(null);
+root.querySelector('.modalbg').addEventListener('mousedown',e=>{if(e.target.classList.contains('modalbg'))done(null);});
+inp.addEventListener('keydown',e=>{
+if(e.key==='Enter')done(inp.value.trim()||null);
+else if(e.key==='Escape')done(null);
+});
+});
+}
+function wireExtras(){
+const tip=()=>document.getElementById('tooltip');
+let cur=null;
+const arm=el=>{if(el.hasAttribute('title')){el.setAttribute('data-tip',el.getAttribute('title'));el.removeAttribute('title');}};
+const show=el=>{
+const t=el.getAttribute('data-tip'),b=tip();
+if(!t||!b)return;
+b.textContent=t;b.hidden=false;
+const r=el.getBoundingClientRect(),bw=b.offsetWidth,bh=b.offsetHeight;
+b.style.left=Math.max(8,Math.min(innerWidth-bw-8,r.left+r.width/2-bw/2))+'px';
+b.style.top=(r.top-bh-8<8?r.bottom+8:r.top-bh-8)+'px';
+cur=el;
+};
+const hide=()=>{const b=tip();if(b)b.hidden=true;cur=null;};
+document.addEventListener('mouseover',e=>{
+const el=e.target.closest&&e.target.closest('[title],[data-tip]');
+if(!el){if(cur)hide();return;}
+arm(el);
+if(el!==cur)show(el);
+});
+document.addEventListener('focusin',e=>{
+const el=e.target.closest&&e.target.closest('[title],[data-tip]');
+if(el){arm(el);show(el);}
+});
+['focusout','click','scroll','keydown'].forEach(n=>document.addEventListener(n,hide,true));
+document.addEventListener('keydown',e=>{if(ddOpen)ddOpen.key(e);},true);
+document.addEventListener('mousedown',e=>{if(ddOpen&&!ddOpen.menu.contains(e.target)&&!ddOpen.btn.contains(e.target))closeDd();},true);
+window.addEventListener('scroll',e=>{if(ddOpen&&!ddOpen.menu.contains(e.target))closeDd();},true);
+window.addEventListener('resize',closeDd);
+document.addEventListener('click',e=>{
+const c=e.target.closest('[data-ins]');
+if(!c)return;
+const ta=document.getElementById(c.dataset.target);
+if(!ta)return;
+const s=ta.selectionStart!==undefined?ta.selectionStart:ta.value.length,en=ta.selectionEnd!==undefined?ta.selectionEnd:s,t=c.dataset.ins;
+ta.value=ta.value.slice(0,s)+t+ta.value.slice(en);
+ta.focus();
+ta.setSelectionRange(s+t.length,s+t.length);
+ta.dataset.chip='1';
+ta.dispatchEvent(new Event('input',{bubbles:true}));
+});
+document.addEventListener('focusout',e=>{
+const t=e.target;
+if(t.matches&&t.matches('textarea.eq')&&t.dataset.chip==='1'){
+t.dataset.chip='';
+t.dispatchEvent(new Event('change',{bubbles:true}));
+}
+});
+}
+
 function init(){
 try{const th=localStorage.getItem('rubric.theme');if(th)document.documentElement.dataset.theme=th;}catch(e){}
 populateExampleSelect();
-STORE.subscribe(renderAll);
+STORE.subscribe(()=>{renderAll();upgradeControls();});
 wireEvents();
+wireExtras();
 STORE.load();
 if(typeof location!=='undefined'&&/[?&]test=1\b/.test(location.search)){
 TESTS.run();
