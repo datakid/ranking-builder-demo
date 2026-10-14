@@ -372,6 +372,7 @@ textarea.eq{font-family:var(--mono);font-size:12.5px;line-height:1.5;resize:vert
 .methodpanel{margin-bottom:16px}
 .tooltip{max-width:260px;line-height:1.4}
 .modal .mactions{margin-top:18px}
+textarea.eq[data-field="formula"]{min-height:36px}
 .dd-hdr{flex:none;width:auto}
 .dd-hdr .ddbtn{width:auto;min-width:148px;white-space:nowrap}
 header .iconbtn,#testBadge{flex:none;white-space:nowrap}
@@ -1018,7 +1019,7 @@ crit.forEach((c,ci)=>{
 const raw='Data!'+colOf(ci)+(ri+2),k=c.scale.kind,p=c.scale.params||{};
 const st=k==='custom'?stats[c.id]:{...stats[c.id],min:'MIN('+rng(ci)+')',max:'MAX('+rng(ci)+')'};
 let f;
-if(k==='percentile')f='(RANK.AVG('+raw+','+rng(ci)+',1)-1)/(COUNT('+rng(ci)+')-1)';
+if(k==='percentile')f='(COUNTIF('+rng(ci)+',"<"&'+raw+')+(COUNTIF('+rng(ci)+','+raw+')-1)/2)/(COUNT('+rng(ci)+')-1)';
 else if(k==='categorical')f=Object.keys(p.map||{}).reduceRight((acc,key)=>'IF('+raw+'="'+key.replace(/"/g,'""')+'",'+p.map[key]+','+acc+')','NA()');
 else f=NORMALIZERS[k].sheet(p,st,raw).slice(1);
 if(dirApplies(c))f='1-('+f+')';
@@ -2278,11 +2279,11 @@ return`<div class="ccard" data-critcard="${cr.id}">
 <label class="flabel">Unit</label><input class="field" data-crit="${cr.id}" data-field="unit" value="${esc(cr.unit||'')}">
 <label class="flabel">Description</label><input class="field" data-crit="${cr.id}" data-field="description" value="${esc(cr.description||'')}">
 ${formulaEditor(cr)}
-<label class="flabel">Direction</label>
+<div class="dirblock"${cr.scale.kind==='custom'?' hidden':''}><label class="flabel">Direction</label>
 <div class="dirtoggle">
 <button data-crit="${cr.id}" data-field="direction" data-val="max" class="${cr.direction==='max'?'on':''}">Higher is better</button>
 <button data-crit="${cr.id}" data-field="direction" data-val="min" class="${cr.direction==='min'?'on':''}">Lower is better</button>
-</div>
+</div></div>
 <label class="flabel">Value function</label>
 <select class="field" data-crit="${cr.id}" data-field="normalizer">
 ${Object.values(NORMALIZERS).map(n=>`<option value="${n.id}"${n.id===cr.scale.kind?' selected':''}>${n.label}</option>`).join('')}
