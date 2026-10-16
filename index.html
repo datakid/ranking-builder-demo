@@ -458,6 +458,7 @@ return fallback();
 }
 let _toastTimer=0;
 function toast(msg,ms=2000){
+if(typeof document==='undefined')return;
 const el=$('#toast');
 if(!el)return;
 el.textContent=msg;
@@ -485,6 +486,7 @@ id:'fixed-linear',label:'Fixed range',blurb:'Scales between two bounds you set, 
 params:[{key:'lo',label:'Low bound',type:'number',default:0},{key:'hi',label:'High bound',type:'number',default:1}],
 needs:'numeric',
 fn(x,p){
+if(p.hi===p.lo)throw new Error('the low and high bounds must differ');
 const raw=(x-p.lo)/(p.hi-p.lo);
 const v=clamp(raw,0,1);
 return{v,flag:(raw<0||raw>1)?'Clamped to the fixed range.':null};
@@ -498,27 +500,27 @@ decay:{
 id:'decay',label:'Decay',blurb:'Falls off smoothly from 1, halving every stated half-life.',
 params:[{key:'halfLife',label:'Half-life',type:'number',default:10}],
 needs:'numeric',
-fn(x,p){const lambda=p.halfLife/Math.LN2;return{v:Math.exp(-x/lambda),flag:null};},
+fn(x,p){if(!(p.halfLife>0))throw new Error('the half-life must be greater than 0');const lambda=p.halfLife/Math.LN2;return{v:clamp(Math.exp(-x/lambda),0,1),flag:x<0?'Negative value clamped to 1.':null};},
 inverse(v,p){if(v<=0||v>1)return null;const lambda=p.halfLife/Math.LN2;return -lambda*Math.log(v);},
 latex(p){return`e^{-x / \\lambda},\\ \\lambda = \\frac{${p.halfLife}}{\\ln 2}`;},
 plain(p){return`e^(\u2212x / \u03bb), \u03bb = half-life \u00f7 ln 2 = ${(p.halfLife/Math.LN2).toFixed(2)}`;},
-sheet(p,stats,ref){return`=EXP(-${ref}/${(p.halfLife/Math.LN2).toFixed(4)})`;}
+sheet(p,stats,ref){return`=EXP(-${ref}/${String(p.halfLife/Math.LN2)})`;}
 },
 logistic:{
 id:'logistic',label:'Logistic',blurb:'S-curve centred on a midpoint, controlled by a 10\u201390% width.',
 params:[{key:'midpoint',label:'Midpoint',type:'number',default:0},{key:'width',label:'10\u201390% width',type:'number',default:1}],
 needs:'numeric',
-fn(x,p){const k=Math.log(81)/p.width;return{v:1/(1+Math.exp(-k*(x-p.midpoint))),flag:null};},
+fn(x,p){if(!(p.width>0))throw new Error('the width must be greater than 0');const k=Math.log(81)/p.width;return{v:1/(1+Math.exp(-k*(x-p.midpoint))),flag:null};},
 inverse(v,p){if(v<=0||v>=1)return null;const k=Math.log(81)/p.width;return p.midpoint-Math.log(1/v-1)/k;},
 latex(p){return`\\frac{1}{1+e^{-k(x-${p.midpoint})}},\\ k=\\frac{\\ln 81}{${p.width}}`;},
 plain(p){return`1 / (1 + e^(\u2212k(x \u2212 ${p.midpoint}))), k = ln81 \u00f7 ${p.width}`;},
-sheet(p,stats,ref){const k=(Math.log(81)/p.width).toFixed(6);return`=1/(1+EXP(-${k}*(${ref}-${p.midpoint})))`;}
+sheet(p,stats,ref){const k=String(Math.log(81)/p.width);return`=1/(1+EXP(-${k}*(${ref}-${p.midpoint})))`;}
 },
 'target-band':{
 id:'target-band',label:'Target band',blurb:'Full points at an ideal value, falling off linearly within a tolerance.',
 params:[{key:'ideal',label:'Ideal value',type:'number',default:0},{key:'tol',label:'Tolerance',type:'number',default:1}],
 needs:'numeric',
-fn(x,p){return{v:1-Math.min(1,Math.abs(x-p.ideal)/p.tol),flag:null};},
+fn(x,p){if(!(p.tol>0))throw new Error('the tolerance must be greater than 0');return{v:1-Math.min(1,Math.abs(x-p.ideal)/p.tol),flag:null};},
 inverse(){return null;},
 latex(p){return`1 - \\min\\left(1, \\frac{|x-${p.ideal}|}{${p.tol}}\\right)`;},
 plain(p){return`1 \u2212 min(1, |x \u2212 ${p.ideal}| / ${p.tol})`;},
@@ -528,7 +530,7 @@ sheet(p,stats,ref){return`=1-MIN(1,ABS(${ref}-${p.ideal})/${p.tol})`;}
 id:'target-soft',label:'Target (soft)',blurb:'Bell curve peaking at an ideal value, width set by sigma.',
 params:[{key:'ideal',label:'Ideal value',type:'number',default:0},{key:'sigma',label:'Sigma',type:'number',default:1}],
 needs:'numeric',
-fn(x,p){return{v:Math.exp(-Math.pow((x-p.ideal)/p.sigma,2)),flag:null};},
+fn(x,p){if(!(p.sigma>0))throw new Error('sigma must be greater than 0');return{v:Math.exp(-Math.pow((x-p.ideal)/p.sigma,2)),flag:null};},
 inverse(){return null;},
 latex(p){return`e^{-\\left(\\frac{x-${p.ideal}}{${p.sigma}}\\right)^2}`;},
 plain(p){return`e^(\u2212((x \u2212 ${p.ideal}) / ${p.sigma})\u00b2)`;},
@@ -570,7 +572,7 @@ percentile:{
 id:'percentile',label:'Percentile',blurb:'Rank among the current options, 0 for lowest, 1 for highest, tied ranks averaged.',
 params:[],needs:'numeric',
 fn(x,p,stats){
-const vals=stats.values,n=vals.length;
+const vals=stats.values.filter(v=>typeof v==='number'),n=vals.length;
 if(n<=1)return{v:0.5,flag:'No variation across options for this criterion.'};
 const sorted=[...vals].sort((a,b)=>a-b);
 let sumRank=0,count=0;
@@ -620,6 +622,7 @@ const EXPR=(function(){
 const FN={abs:Math.abs,sqrt:Math.sqrt,exp:Math.exp,ln:Math.log,log10:Math.log10,log2:Math.log2,pow:Math.pow,min:Math.min,max:Math.max,floor:Math.floor,ceil:Math.ceil,round:Math.round,sign:Math.sign,tanh:Math.tanh,sin:Math.sin,cos:Math.cos,atan:Math.atan,clamp:(v,a,b)=>Math.min(b,Math.max(a,v)),if:(c,a,b)=>c?a:b};
 const LV=[['||'],['&&'],['<','<=','>','>=','==','!='],['+','-'],['*','/','%']];
 const cache=new Map();
+const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 function parse(src,extra){
 const toks=[];
 const re=/\s*(?:(\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+)|([A-Za-z_]\w*)|(\*\*|<=|>=|==|!=|&&|\|\||[-+*\/%^(),<>!?:]))/y;
@@ -655,7 +658,7 @@ if(k.t==='i'){
 if(eat('(')){
 const a=[];
 if(!eat(')')){do a.push(tern());while(eat(','));need(')');}
-if(!FN[k.v]&&!(extra||[]).includes(k.v))throw new Error('Unknown function \u201c'+k.v+'\u201d');
+if(!own(FN,k.v)&&!(extra||[]).includes(k.v))throw new Error('Unknown function \u201c'+k.v+'\u201d');
 return{k:'f',n:k.v,a};
 }
 return{k:'v',n:k.v};
@@ -677,7 +680,7 @@ else if(n.k==='f')n.a.forEach(a=>walk(a,s));
 function ev(n,env){
 switch(n.k){
 case'n':return n.v;
-case'v':{const v=env[n.n];if(v===undefined)throw new Error('Unknown name \u201c'+n.n+'\u201d');return v;}
+case'v':{const v=own(env,n.n)?env[n.n]:undefined;if(v===undefined)throw new Error('Unknown name \u201c'+n.n+'\u201d');return v;}
 case'u':return n.o==='-'?-ev(n.a,env):(ev(n.a,env)?0:1);
 case'b':{
 const l=ev(n.l,env);
@@ -691,7 +694,7 @@ default:return l!==r?1:0;
 }
 }
 case'if':return ev(n.c,env)?ev(n.a,env):ev(n.b,env);
-default:{const f=(env.__fn&&env.__fn[n.n])||FN[n.n];return f(...n.a.map(a=>ev(a,env)));}
+default:{const f=(env.__fn&&own(env.__fn,n.n)&&env.__fn[n.n])||(own(FN,n.n)?FN[n.n]:null);if(typeof f!=='function')throw new Error('Unknown function \u201c'+n.n+'\u201d');return f(...n.a.map(a=>ev(a,env)));}
 }
 }
 function compile(src,names,extra){
@@ -720,7 +723,7 @@ case'b':{
 const l=sheet(n.l,m),r=sheet(n.r,m);
 if(n.o==='&&')return'AND('+l+','+r+')';
 if(n.o==='||')return'OR('+l+','+r+')';
-if(n.o==='%')return'MOD('+l+','+r+')';
+if(n.o==='%')return'(('+l+')-('+r+')*TRUNC(('+l+')/('+r+')))';
 if(n.o==='==')return'('+l+'='+r+')';
 if(n.o==='!=')return'('+l+'<>'+r+')';
 return'('+l+n.o+r+')';
@@ -730,8 +733,8 @@ const a=n.a.map(t=>sheet(t,m));
 if(m.__fn&&m.__fn[n.n])return m.__fn[n.n](a);
 if(n.n==='clamp')return'MIN('+a[2]+',MAX('+a[1]+','+a[0]+'))';
 if(n.n==='log2')return'LOG('+a[0]+',2)';
-if(n.n==='ceil')return'ROUNDUP('+a[0]+',0)';
-if(n.n==='round')return'ROUND('+a[0]+',0)';
+if(n.n==='ceil')return'(-INT(-('+a[0]+')))';
+if(n.n==='round')return'INT(('+a[0]+')+0.5)';
 return(XL[n.n]||n.n.toUpperCase())+'('+a.join(',')+')';
 }
 }
@@ -754,18 +757,23 @@ const o={};
 (list||[]).forEach(c=>{if(c&&c.name&&Number.isFinite(c.value))o[c.name]=c.value;});
 return o;
 }
-function parseConsts(text){
+function parseConsts(text,reserved){
 const out=[],seen=new Set();
+let dropped=0;
 String(text).split('\n').map(l=>l.trim()).filter(Boolean).forEach(l=>{
 const m=/^([A-Za-z_]\w*)\s*[:=]\s*(-?[\d.]+(?:[eE][+-]?\d+)?)$/.exec(l);
-if(m&&!seen.has(m[1])&&!CUSTOM_STAT_NAMES.includes(m[1])&&Number.isFinite(Number(m[2]))){seen.add(m[1]);out.push({name:m[1],value:Number(m[2])});}
+if(m&&!seen.has(m[1])&&!CUSTOM_STAT_NAMES.includes(m[1])&&!(reserved||[]).includes(m[1])&&Number.isFinite(Number(m[2]))){seen.add(m[1]);out.push({name:m[1],value:Number(m[2])});}
+else dropped++;
 });
+out.dropped=dropped;
 return out;
 }
+function ignoredToast(n){if(n>0)toast('Ignored '+n+' line'+(n===1?'':'s')+' that could not be read as name: number, or used a reserved name.',4000);}
 function constLines(list){return(list||[]).map(c=>c.name+': '+c.value).join('\n');}
 function customNames(p){return[...CUSTOM_STAT_NAMES,...(p.consts||[]).map(c=>c.name)];}
+function dirApplicableKind(k){return!['decay','target-band','target-soft','custom'].includes(k);}
 function dirApplies(cr){
-return cr.direction==='min'&&cr.scale.kind!=='decay'&&cr.scale.kind!=='target-band'&&cr.scale.kind!=='custom';
+return cr.direction==='min'&&dirApplicableKind(cr.scale.kind);
 }
 function isRelative(cr){
 if(['linear','log-linear','percentile'].includes(cr.scale.kind))return true;
@@ -792,7 +800,7 @@ sheet(p,stats,ref){
 const c=EXPR.compile(p.expr||'x',customNames(p));
 if(!c.ok)return'=NA()';
 const env={...statEnv(stats),...constEnv(p.consts)},m={};
-Object.keys(env).forEach(k=>{m[k]=String(Math.round(env[k]*1e6)/1e6);});
+Object.keys(env).forEach(k=>{m[k]=String(env[k]);});
 m.x=ref;
 return'=MIN(1,MAX(0,'+EXPR.sheet(c.ast,m)+'))';
 }
@@ -850,17 +858,27 @@ function constsEditor(cr){
 const p=cr.scale.params||{};
 return'<label class="flabel">Constants, one \u2018name:value\u2019 per line</label><textarea class="field eq" rows="2" spellcheck="false" data-crit="'+cr.id+'" data-param="consts">'+esc(constLines(p.consts))+'</textarea>';
 }
+function methodName(a,plain){
+if(a.kind==='custom')return'Custom equation';
+if(a.kind==='topsis')return'TOPSIS closeness';
+if(a.p===1)return'Weighted sum';
+if(a.p===0)return'Geometric mean';
+if(a.p===-1)return'Harmonic mean';
+return plain?'Power mean p='+a.p:'Power mean (p='+a.p+')';
+}
 function aggChoice(a){return a.kind==='custom'?'custom':a.kind==='topsis'?'topsis':String(a.p);}
 function renderMethodPanel(model){
-const a=model.aggregate,ch=aggChoice(a);
+const a=model.aggregate;
+let ch=aggChoice(a);
 const opts=[['1','Weighted sum'],['0','Geometric mean'],['-1','Harmonic mean'],['topsis','TOPSIS closeness'],['custom','Custom equation']];
+if(!opts.some(o=>o[0]===ch)){opts.push(['p:'+a.p,methodName(a)]);ch='p:'+a.p;}
 let extra='';
 if(a.kind==='custom'){
 const st=aggStatus(model);
 const chips=['wsum','wgeo','whm','wmin','wmax','wpow(','n'].map(n=>chipHtml(n,'eq_agg')).concat(model.criteria.map(c=>chipHtml(c.id,'eq_agg',c.label+' (score, 0 to 1)'))).concat(model.criteria.map(c=>chipHtml('w_'+c.id,'eq_agg',c.label+' (weight share)'))).concat((a.consts||[]).map(c=>chipHtml(c.name,'eq_agg'))).join('');
 extra=tplSelect('agg',AGG_TEMPLATES)+'<label class="flabel" style="margin-top:12px">Equation \u00b7 combine the criteria into one number from 0 to 1</label><textarea class="field eq" id="eq_agg" rows="2" spellcheck="false" data-agg="expr">'+esc(a.expr||'')+'</textarea><div class="eqmsg '+st.cls+'" data-eqmsg="agg">'+esc(st.text)+'</div><div class="eqchips">'+chips+'</div><label class="flabel">Constants, one \u2018name:value\u2019 per line</label><textarea class="field eq" rows="2" spellcheck="false" data-agg="consts">'+esc(constLines(a.consts))+'</textarea>';
 }
-return'<div class="panel methodpanel"><label class="flabel">Scoring method</label><select class="field" data-agg="kind">'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===ch?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+(a.kind==='custom'?'':'<button type="button" class="btn ghost" data-mkcustom="agg">\u0192 Write your own equation</button>')+extra+'</div>';
+return'<div class="panel methodpanel"><label class="flabel">Scoring method</label><select class="field" data-agg="kind">'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===ch?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+(a.kind==='custom'?'':'<button type="button" class="btn ghost" data-mkcustom="agg">\u0192 Write your own equation</button>')+'<label class="flabel" style="margin-top:12px">Break exact ties by</label><select class="field" data-agg="tiebreak"><option value="">None</option>'+model.criteria.map(c=>'<option value="'+esc(c.id)+'"'+((a.tiebreak||[])[0]===c.id?' selected':'')+'>'+esc(c.label)+'</option>').join('')+'</select>'+extra+'</div>';
 }
 function updateEqMsg(ta){
 let key,st;
@@ -1019,26 +1037,40 @@ crit.forEach((c,ci)=>{
 const raw='Data!'+colOf(ci)+(ri+2),k=c.scale.kind,p=c.scale.params||{};
 const st=k==='custom'?stats[c.id]:{...stats[c.id],min:'MIN('+rng(ci)+')',max:'MAX('+rng(ci)+')'};
 let f;
-if(k==='percentile')f='(COUNTIF('+rng(ci)+',"<"&'+raw+')+(COUNTIF('+rng(ci)+','+raw+')-1)/2)/(COUNT('+rng(ci)+')-1)';
+if(k==='percentile')f='IF(COUNT('+rng(ci)+')<=1,0.5,(COUNTIF('+rng(ci)+',"<"&'+raw+')+(COUNTIF('+rng(ci)+','+raw+')-1)/2)/(COUNT('+rng(ci)+')-1))';
 else if(k==='categorical')f=Object.keys(p.map||{}).reduceRight((acc,key)=>'IF('+raw+'="'+key.replace(/"/g,'""')+'",'+p.map[key]+','+acc+')','NA()');
-else f=NORMALIZERS[k].sheet(p,st,raw).slice(1);
+else if(k==='step'){
+const bps=[...(p.breakpoints||[])].sort((a,b)=>a.at-b.at);
+f=bps.length?'MIN(1,MAX(0,IF('+raw+'<'+bps[0].at+','+bps[0].v+',LOOKUP('+raw+',{'+bps.map(b=>b.at).join(',')+'},{'+bps.map(b=>b.v).join(',')+'}))))':'0';
+}else{
+f=NORMALIZERS[k].sheet(p,st,raw).slice(1);
+if(k==='linear'||k==='log-linear')f='IF(MAX('+rng(ci)+')=MIN('+rng(ci)+'),0.5,'+f+')';
+}
 if(dirApplies(c))f='1-('+f+')';
-const pol=c.missing,imp=pol==='worst'?'0':pol==='neutral'?'0.5':pol==='best'?'1':'NA()';
-row.push({f:'IF(ISBLANK('+raw+'),'+imp+','+f+')'});
+const pol=c.missing,imp=pol==='worst'||pol==='redistribute'?'0':pol==='neutral'?'0.5':pol==='best'?'1':'NA()';
+row.push({f:k==='categorical'?'IF(ISBLANK('+raw+'),'+imp+',IFERROR('+f+','+imp+'))':'IF(ISBLANK('+raw+'),'+imp+','+f+')'});
 });
 const nr=colOf(0)+r+':'+colOf(L-1)+r;
 const fl='(('+nr+'<0.001)*0.001+('+nr+'>=0.001)*'+nr+')',wf=wr+'/'+wsum,a=model.aggregate;
+const anyRedis=crit.some(c=>c.missing==='redistribute');
 let tf;
-if(a.kind==='custom'){
+if(a.kind==='custom'&&!anyRedis){
 const cc=EXPR.compile(a.expr||'wsum',aggNames(model),['wpow']);
 const m={n:String(L),pi:String(Math.PI),e:String(Math.E)};
 crit.forEach((c,ci)=>{m[c.id]=colOf(ci)+r;m['w_'+c.id]='($'+colOf(ci)+'$2/'+wsum+')';});
-Object.assign(m,{wsum:'(SUMPRODUCT('+nr+','+wr+')/'+wsum+')',wmin:'MIN('+nr+')',wmax:'MAX('+nr+')',wgeo:'EXP(SUMPRODUCT('+wf+',LN('+fl+')))',whm:'(1/SUMPRODUCT('+wf+'/'+fl+'))'});
+const wLo=crit.map((c,ci)=>'IF($'+colOf(ci)+'$2>0,'+colOf(ci)+r+',9)').join(','),wHi=crit.map((c,ci)=>'IF($'+colOf(ci)+'$2>0,'+colOf(ci)+r+',-9)').join(',');
+Object.assign(m,{wsum:'(SUMPRODUCT('+nr+','+wr+')/'+wsum+')',wmin:'IF(MIN('+wLo+')=9,0,MIN('+wLo+'))',wmax:'IF(MAX('+wHi+')=-9,0,MAX('+wHi+'))',wgeo:'EXP(SUMPRODUCT('+wf+',LN('+fl+')))',whm:'(1/SUMPRODUCT('+wf+'/'+fl+'))'});
 (a.consts||[]).forEach(q=>{m[q.name]=String(q.value);});
 m.__fn={wpow:x=>'(SUMPRODUCT('+wf+','+fl+'^'+x[0]+')^(1/'+x[0]+'))'};
 tf=cc.ok?'MIN(100,MAX(0,100*('+EXPR.sheet(cc.ast,m)+')))':'NA()';
-}else if(a.kind==='topsis')tf=null;
-else if(a.p===1)tf='SUMPRODUCT('+nr+','+wr+')/'+wsum+'*100';
+}else if(a.kind==='topsis'||a.kind==='custom')tf=null;
+else if(anyRedis){
+const we=crit.map((c,ci)=>{const w='$'+colOf(ci)+'$2';return c.missing==='redistribute'?'('+w+'*(1-'+(c.formula?'ISERROR(':'ISBLANK(')+'Data!'+colOf(ci)+(ri+2)+')))':w;});
+const cells=crit.map((c,ci)=>colOf(ci)+r),sw=we.join('+');
+if(a.p===1)tf='100*('+cells.map((q,i)=>q+'*'+we[i]).join('+')+')/('+sw+')';
+else if(a.p===0)tf='100*EXP(('+cells.map((q,i)=>we[i]+'*LN(MAX(0.001,'+q+'))').join('+')+')/('+sw+'))';
+else tf='100*(('+cells.map((q,i)=>we[i]+'*MAX(0.001,'+q+')^'+a.p).join('+')+')/('+sw+'))^(1/'+a.p+')';
+}else if(a.p===1)tf='SUMPRODUCT('+nr+','+wr+')/'+wsum+'*100';
 else if(a.p===0)tf='100*EXP(SUMPRODUCT('+wf+',LN('+fl+')))';
 else tf='100*SUMPRODUCT('+wf+','+fl+'^'+a.p+')^(1/'+a.p+')';
 const gref=id=>{const gi=crit.findIndex(c=>c.id===id);return gi<0?'NA()':'Data!'+colOf(gi)+(ri+2);};
@@ -1059,7 +1091,15 @@ default:return'TRUE';
 const pen=model.gates.filter(g=>g.severity!=='hard').map(g=>(g.penalty||0)+'*NOT('+gate(g.when)+')').join('+');
 row.push(tf===null?(app[o.id]!==undefined?{n:app[o.id]}:null):{f:'MIN(100,MAX(0,('+tf+')'+(pen?'-('+pen+')':'')+'))'});
 row.push({f:'IF('+sc+r+'<>"","",1+COUNTIFS($'+tc+'$3:$'+tc+'$'+last+',">"&'+tc+r+',$'+sc+'$3:$'+sc+'$'+last+',""))'});
-const inc=crit.map((c,ci)=>c.missing==='exclude-option'?(c.formula?'ISERROR(':'ISBLANK(')+'Data!'+colOf(ci)+(ri+2)+')':null).filter(Boolean);
+const inc=crit.map((c,ci)=>{
+if(c.missing!=='exclude-option')return null;
+const cell='Data!'+colOf(ci)+(ri+2);
+if(c.scale.kind==='categorical'&&!c.formula){
+const keys=Object.keys((c.scale.params||{}).map||{});
+return keys.length?'OR(ISBLANK('+cell+'),ISNA(MATCH('+cell+',{'+keys.map(q=>'"'+q.replace(/"/g,'""')+'"').join(',')+'},0)))':'TRUE';
+}
+return(c.formula?'ISERROR(':'ISBLANK(')+cell+')';
+}).filter(Boolean);
 let sf=model.gates.filter(g=>g.severity==='hard').reduceRight((acc,g)=>'IF(NOT('+gate(g.when)+'),"Excluded: '+g.label.replace(/"/g,'""')+'",'+acc+')','""');
 if(inc.length)sf='IF(OR('+inc.join(',')+'),"Incomplete data",'+sf+')';
 row.push({f:sf});
@@ -1224,11 +1264,15 @@ const raw=opt.values[cr.id];
 let missing=isMissingVal(raw);
 const norm=NORMALIZERS[cr.scale.kind];
 let v=null,flag=null;
+if(!missing&&!norm){missing=true;notes.push(cr.label+': unknown value function ('+opt.label+')');}
+else if(!missing&&norm.needs==='numeric'&&typeof raw!=='number'){missing=true;notes.push(cr.label+': \u201c'+raw+'\u201d is not a number ('+opt.label+')');}
+else if(!missing&&norm.needs==='boolean'&&typeof raw!=='boolean'){missing=true;notes.push(cr.label+': \u201c'+raw+'\u201d is not true/false ('+opt.label+')');}
 if(!missing){
 try{
 const r=norm.fn(raw,cr.scale.params||{},stats[cr.id]);
 v=r.v;flag=r.flag;
 if(v===null)missing=true;
+else if(!Number.isFinite(v)){missing=true;v=null;notes.push(cr.label+': the value function gives no number ('+opt.label+')');}
 }catch(e){
 missing=true;
 flag=e.message;
@@ -1263,6 +1307,7 @@ incomplete.push({option:opt,missing:missingCrits});
 
 const excluded=[];
 const softPenalties={};
+const softList={};
 const gatedOptionIds=new Set();
 model.options.forEach(opt=>{
 if(excludeOptionIds.has(opt.id))return;
@@ -1275,6 +1320,7 @@ gatedOptionIds.add(opt.id);
 break;
 }else{
 softPenalties[opt.id]=(softPenalties[opt.id]||0)+(g.penalty||0);
+(softList[opt.id]=softList[opt.id]||[]).push({gate:g.label,points:g.penalty||0});
 }
 }
 }
@@ -1301,8 +1347,13 @@ const wFrac={};critList.forEach(c=>{wFrac[c.id]=weights[c.id]/100;});
 const contributions={};
 let total;
 const p=model.aggregate.kind==='topsis'?1:model.aggregate.p;
+const live=critList.filter(c=>normValues[opt.id][c.id]!==null&&wFrac[c.id]>0);
 
-if(model.aggregate.kind==='custom'){
+if(!live.length){
+critList.forEach(c=>{contributions[c.id]={v:normValues[opt.id][c.id],weighted:0,pctOfTotal:0};});
+total=0;
+notes.push(opt.label+': no weighted criteria with data; scored 0.');
+}else if(model.aggregate.kind==='custom'){
 const ac=EXPR.compile(model.aggregate.expr||'wsum',aggNames(model),['wpow']);
 let t=0;
 if(!ac.ok){const m='Custom equation: '+ac.error;if(!notes.includes(m))notes.push(m);}
@@ -1342,13 +1393,14 @@ if(floored)notes.push('values floored at 0.001 for p \u2264 0');
 total=Math.pow(s,1/p);
 }
 
+critList.forEach(c=>{if(contributions[c.id])contributions[c.id].w=wFrac[c.id];});
 const penalty=softPenalties[opt.id]||0;
 const totalPts=clamp(total*100-penalty,0,100);
 const wsum=sum(Object.values(contributions).map(c=>c.weighted))||1;
 Object.values(contributions).forEach(c=>{c.pctOfTotal=totalPts?c.weighted/wsum*100:0;});
 
 return{option:opt,total:totalPts,rank:0,tied:false,contributions,
-penalties:penalty?[{gate:'soft gate(s)',points:penalty}]:[],softNotes:[]};
+penalties:softList[opt.id]||[],softNotes:[]};
 });
 
 if(model.aggregate.kind==='topsis'){
@@ -1358,20 +1410,22 @@ rankable.forEach(opt=>{
 y[opt.id]={};
 crit.forEach(c=>{
 const v=normValues[opt.id][c.id];
-y[opt.id][c.id]=(v===null?0:v)*(c.weight/weightSum);
+y[opt.id][c.id]=v===null?null:v*(c.weight/weightSum);
 });
 });
 const ideal={},antiIdeal={};
 crit.forEach(c=>{
-const colVals=rankable.map(o=>y[o.id][c.id]);
+const colVals=rankable.map(o=>y[o.id][c.id]).filter(t=>t!==null);
 ideal[c.id]=colVals.length?Math.max(...colVals):0;
 antiIdeal[c.id]=colVals.length?Math.min(...colVals):0;
 });
 scored.forEach(s=>{
 let dPos=0,dNeg=0;
 crit.forEach(c=>{
-dPos+=Math.pow(y[s.option.id][c.id]-ideal[c.id],2);
-dNeg+=Math.pow(y[s.option.id][c.id]-antiIdeal[c.id],2);
+const yy=y[s.option.id][c.id];
+if(yy===null)return;
+dPos+=Math.pow(yy-ideal[c.id],2);
+dNeg+=Math.pow(yy-antiIdeal[c.id],2);
 });
 dPos=Math.sqrt(dPos);dNeg=Math.sqrt(dNeg);
 const C=(dPos+dNeg)?dNeg/(dPos+dNeg):0;
@@ -1380,29 +1434,17 @@ s.total=clamp(C*100-penalty,0,100);
 });
 }
 
-scored.sort((a,b)=>b.total-a.total);
-let rank=0,prevTotal=null;
-scored.forEach((s,i)=>{
-if(prevTotal===null||Math.abs(s.total-prevTotal)>1e-9){rank=i+1;}
-else{s.tied=true;scored[i-1].tied=true;}
-s.rank=rank;
-prevTotal=s.total;
-});
-if(model.aggregate.tiebreak&&model.aggregate.tiebreak.length){
-const groups={};
-scored.forEach(s=>{(groups[s.rank]=groups[s.rank]||[]).push(s);});
-Object.values(groups).forEach(g=>{
-if(g.length>1){
-g.sort((a,b)=>{
-for(const cid of model.aggregate.tiebreak){
-const av=normValues[a.option.id][cid]||0,bv=normValues[b.option.id][cid]||0;
-if(av!==bv)return bv-av;
-}
-return 0;
-});
-notes.push(`Tie among ${g.map(x=>x.option.label).join(', ')} broken by ${model.aggregate.tiebreak.join(', ')}.`);
-}
-});
+const tb=(model.aggregate.tiebreak||[]).filter(id=>model.criteria.some(c=>c.id===id));
+const tbv=(s,id)=>{const v=normValues[s.option.id][id];return v===null||v===undefined?-1:v;};
+scored.sort((a,b)=>{if(Math.abs(b.total-a.total)>1e-9)return b.total-a.total;for(const id of tb){const d=tbv(b,id)-tbv(a,id);if(Math.abs(d)>1e-12)return d;}return 0;});
+let rank=0;
+scored.forEach((s,i)=>{const p=scored[i-1];const same=p&&Math.abs(s.total-p.total)<=1e-9&&tb.every(id=>Math.abs(tbv(s,id)-tbv(p,id))<=1e-12);if(same){s.tied=true;p.tied=true;}else rank=i+1;s.rank=rank;});
+if(tb.length){
+const tbNames=tb.map(id=>model.criteria.find(c=>c.id===id).label).join(', ');
+let grp=[];
+const flush=()=>{if(grp.length>1&&new Set(grp.map(x=>x.rank)).size>1)notes.push(`Tie among ${grp.map(x=>x.option.label).join(', ')} broken by ${tbNames}.`);grp=[];};
+scored.forEach(s=>{if(grp.length&&Math.abs(s.total-grp[0].total)>1e-9)flush();grp.push(s);});
+flush();
 }
 
 const winner=scored[0]||null;
@@ -1413,7 +1455,7 @@ if(winner&&runnerUp){
 let best=null,bv=-Infinity;
 model.criteria.forEach(c=>{
 const wc=winner.contributions[c.id],rc=runnerUp.contributions[c.id];
-const dv=(wc&&wc.v!==null?wc.pctOfTotal:0)-(rc&&rc.v!==null?rc.pctOfTotal:0);
+const dv=(wc&&wc.v!==null?wc.weighted:0)-(rc&&rc.v!==null?rc.weighted:0);
 if(dv>bv){bv=dv;best=c;}
 });
 decisiveCriterion=best;
@@ -1421,7 +1463,7 @@ decisiveCriterion=best;
 
 return{
 ranked:scored,excluded,incomplete,imputations,
-stats:{perCriterion:stats},notes,
+stats:{perCriterion:stats},notes:[...new Set(notes)],
 winner:winner?winner.option:null,
 runnerUp:runnerUp?runnerUp.option:null,
 margin,decisiveCriterion,
@@ -1452,6 +1494,8 @@ const otherSum=sum(others.map(c=>c.weight));
 others.forEach(c=>{
 weights[c.id]=otherSum>0?Math.round(remaining*c.weight/otherSum*100)/100:Math.round(remaining/others.length*100)/100;
 });
+const drift=Math.round((100-sum(Object.values(weights)))*100)/100;
+if(drift){const big=others.reduce((a,c)=>weights[c.id]>weights[a.id]?c:a,others[0]);weights[big.id]=Math.round((weights[big.id]+drift)*100)/100;}
 return{ok:true,weights};
 },
 equal(criteria){
@@ -1552,13 +1596,51 @@ if(!entry)return null;
 const c=entry.contributions[critId];
 return c&&c.v!==null?c.v:0;
 }
+function rebalanceWeights(cs){if(!cs.length)return;const lk=cs.filter(c=>c.locked),fr=cs.filter(c=>!c.locked);const ls=sum(lk.map(c=>c.weight));if(!fr.length){if(Math.abs(ls-100)<1e-6)return;cs.forEach(c=>{c.locked=false;});return rebalanceWeights(cs);}if(ls>100){cs.forEach(c=>{c.locked=false;});return rebalanceWeights(cs);}const b=100-ls,fs=sum(fr.map(c=>c.weight));fr.forEach(c=>{c.weight=Math.round((fs>0?c.weight*b/fs:b/fr.length)*100)/100;});const d=Math.round((100-sum(cs.map(c=>c.weight)))*100)/100;if(d){const big=fr.reduce((a,c)=>c.weight>a.weight?c:a,fr[0]);big.weight=Math.round((big.weight+d)*100)/100;}}
+function removeCriterion(model,id){
+const idx=model.criteria.findIndex(c=>c.id===id);
+if(idx<0)return{gatesTouched:0,refs:[]};
+model.criteria.splice(idx,1);
+model.options.forEach(o=>{delete o.values[id];});
+let hit=false,gatesTouched=0;
+const prune=c=>{
+if(!c)return null;
+if(c.t==='all'||c.t==='any'){const of=(c.of||[]).map(prune).filter(Boolean);return of.length?{...c,of}:null;}
+if(c.t==='not'){const k=prune((c.of||[])[0]);return k?{...c,of:[k]}:null;}
+if(c.criterion===id){hit=true;return null;}
+return c;
+};
+model.gates=(model.gates||[]).map(g=>{hit=false;const w=prune(g.when);if(hit)gatesTouched++;return w?{...g,when:w}:null;}).filter(Boolean);
+model.aggregate.tiebreak=(model.aggregate.tiebreak||[]).filter(t=>t!==id);
+(model.presets||[]).forEach(p=>{delete p.weights[id];});
+const refs=[];
+model.criteria.forEach(c=>{if(c.formula){const k=EXPR.compile(c.formula,null);if(k.ok&&k.vars.has(id))refs.push(c.label);}});
+if(model.aggregate.kind==='custom'){const k=EXPR.compile(model.aggregate.expr||'',null,['wpow']);if(k.ok&&(k.vars.has(id)||k.vars.has('w_'+id)))refs.push('Custom scoring equation');}
+rebalanceWeights(model.criteria);
+return{gatesTouched,refs};
+}
+function removalToast(rc){
+if(!rc||(!rc.gatesTouched&&!rc.refs.length))return;
+const parts=[];
+if(rc.gatesTouched)parts.push('Removed from '+rc.gatesTouched+' gate'+(rc.gatesTouched===1?'':'s')+'.');
+if(rc.refs.length)parts.push('Check: '+rc.refs.join(', ')+'.');
+toast(parts.join(' '),4500);
+}
+function analysisSig(m){return JSON.stringify([m.criteria,m.options,m.gates,m.aggregate,m.view&&m.view.seed]);}
+function liveAnalysis(model){const sg=analysisSig(model),rb=STORE.ui.robustnessResult,mc=STORE.ui.monteCarloResult;return{robustness:rb&&rb.sig===sg?rb:null,mc:mc&&mc.sig===sg?mc:null};}
+function critShare(model,critId){const c=model.criteria.find(x=>x.id===critId);const W=sum(model.criteria.map(x=>x.weight))||1;return c?c.weight/W*100:0;}
+function flipDiffAt(model,critId,optA,optB,t){
+const r=scoreWithCritAt(model,critId,t);
+const a=r.ranked.find(s=>s.option.id===optA),b=r.ranked.find(s=>s.option.id===optB);
+return(a?a.total:-1)-(b?b.total:-1);
+}
+function penPts(result,id){const e=result.ranked.find(s=>s.option.id===id);return e?sum(e.penalties.map(p=>p.points)):0;}
 function flipThresholdExact(model,result,critId,optA,optB){
 const base={};model.criteria.forEach(c=>{base[c.id]=c.weight;});
-const w0=base[critId];
-const S0=100-w0;
+const others=model.criteria.filter(c=>c.id!==critId);
+const S0=sum(others.map(c=>c.weight));
 const vA=contribV(result,optA,critId),vB=contribV(result,optB,critId);
 const dv=vA-vB;
-const others=model.criteria.filter(c=>c.id!==critId);
 let RA=0,RB=0,scaleBase=S0,redistributedEqually=false;
 if(S0<=1e-9){
 redistributedEqually=true;
@@ -1567,38 +1649,38 @@ others.forEach(c=>{RA+=contribV(result,optA,c.id);RB+=contribV(result,optB,c.id)
 }else{
 others.forEach(c=>{RA+=base[c.id]*contribV(result,optA,c.id);RB+=base[c.id]*contribV(result,optB,c.id);});
 }
-const dR=RA-RB;
+const dR=RA-RB,dP=penPts(result,optA)-penPts(result,optB);
 const denom=scaleBase*dv-dR;
 if(Math.abs(denom)<1e-9)return{tStar:null,inRange:false,redistributedEqually,label:'exact'};
-const t=-100*dR/denom;
-return{tStar:t,inRange:t>=0&&t<=100,redistributedEqually,label:'exact'};
+const t=(dP*scaleBase-100*dR)/denom;
+if(!(t>=0&&t<=100))return{tStar:t,inRange:false,redistributedEqually,label:'exact'};
+const d1=flipDiffAt(model,critId,optA,optB,Math.max(0,t-0.05)),d2=flipDiffAt(model,critId,optA,optB,Math.min(100,t+0.05));
+if((d1<=0&&d2>=0||d1>=0&&d2<=0)&&!(d1===0&&d2===0))return{tStar:t,inRange:true,redistributedEqually,label:'exact'};
+return flipThresholdNumeric(model,critId,optA,optB,critShare(model,critId));
 }
 function scoreWithCritAt(model,critId,t){
 const clone=deepClone(model);
 const before={};clone.criteria.forEach(c=>{before[c.id]=c.weight;});
-const w0=before[critId];
-const S0=100-w0;
 const others=clone.criteria.filter(c=>c.id!==critId);
+const S0=sum(others.map(c=>c.weight));
 if(S0<=1e-9)others.forEach(c=>{c.weight=(100-t)/(others.length||1);});
 else others.forEach(c=>{c.weight=(100-t)*before[c.id]/S0;});
 clone.criteria.find(c=>c.id===critId).weight=t;
 return ENGINE.score(clone);
 }
-function flipThresholdNumeric(model,critId,optA,optB){
-function diffAt(t){
-const r=scoreWithCritAt(model,critId,t);
-const a=r.ranked.find(s=>s.option.id===optA),b=r.ranked.find(s=>s.option.id===optB);
-return(a?a.total:-1)-(b?b.total:-1);
-}
-let bracket=null,prev=diffAt(0),prevT=0;
-const steps=200;
+function flipThresholdNumeric(model,critId,optA,optB,w0){
+if(w0===undefined)w0=critShare(model,critId);
+const diffAt=t=>flipDiffAt(model,critId,optA,optB,t);
+const steps=200,brackets=[];
+let prev=diffAt(0),prevT=0;
 for(let i=1;i<=steps;i++){
 const tt=i*100/steps,cur=diffAt(tt);
-if((prev<0&&cur>=0)||(prev>0&&cur<=0)){bracket=[prevT,tt];break;}
+if((prev<0&&cur>=0)||(prev>0&&cur<=0))brackets.push([prevT,tt]);
 prev=cur;prevT=tt;
 }
-if(!bracket)return{tStar:null,inRange:false,label:'numerical'};
-let[a,b]=bracket,fa=diffAt(a);
+if(!brackets.length)return{tStar:null,inRange:false,label:'numerical'};
+let[a,b]=brackets.reduce((best,br)=>Math.abs((br[0]+br[1])/2-w0)<Math.abs((best[0]+best[1])/2-w0)?br:best);
+let fa=diffAt(a);
 for(let i=0;i<60;i++){
 const mid=(a+b)/2,fm=diffAt(mid);
 if(fa*fm<=0)b=mid;else{a=mid;fa=fm;}
@@ -1607,22 +1689,30 @@ const t=(a+b)/2;
 return{tStar:t,inRange:t>=0&&t<=100,label:'numerical'};
 }
 function flipThreshold(model,result,critId,optA,optB){
-if(model.aggregate.kind==='power-mean'&&model.aggregate.p===1)return flipThresholdExact(model,result,critId,optA,optB);
-return flipThresholdNumeric(model,critId,optA,optB);
+const w0=critShare(model,critId);
+const nulls=[optA,optB].some(id=>{const e=result.ranked.find(x=>x.option.id===id);return!e||Object.values(e.contributions).some(c=>c.v===null);});
+if(model.aggregate.kind==='power-mean'&&model.aggregate.p===1&&!nulls)return flipThresholdExact(model,result,critId,optA,optB);
+return flipThresholdNumeric(model,critId,optA,optB,w0);
 }
+const cfCache=new Map();
 function closestFlip(model,result){
 if(!result.winner||result.ranked.length<2)return null;
+const sig=analysisSig(model);
+if(cfCache.has(sig))return cfCache.get(sig);
 const winnerId=result.winner.id;
 let best=null;
 model.criteria.forEach(c=>{
+const w0=critShare(model,c.id);
 result.ranked.slice(1).forEach(s=>{
 const ft=flipThreshold(model,result,c.id,winnerId,s.option.id);
 if(ft.tStar!==null&&ft.inRange){
-const w0=c.weight,delta=Math.abs(ft.tStar-w0);
+const delta=Math.abs(ft.tStar-w0);
 if(!best||delta<best.delta)best={criterionId:c.id,delta,tStar:ft.tStar,w0,against:s.option.id};
 }
 });
 });
+cfCache.set(sig,best);
+if(cfCache.size>8)cfCache.delete(cfCache.keys().next().value);
 return best;
 }
 function bisectRawForTarget(model,optId,critId,otherId){
@@ -1631,6 +1721,8 @@ if(!vals.length)return null;
 const lo0=Math.min(...vals),hi0=Math.max(...vals);
 const pad=(hi0-lo0)*0.5||Math.abs(lo0||1)*0.5;
 const lo=lo0-pad,hi=hi0+pad;
+const own=model.options.find(o=>o.id===optId);
+const cur=own&&typeof own.values[critId]==='number'?own.values[critId]:(lo+hi)/2;
 function diffAt(x){
 const clone=deepClone(model);
 const o=clone.options.find(oo=>oo.id===optId);
@@ -1641,10 +1733,19 @@ const a=r.ranked.find(s=>s.option.id===optId),b=r.ranked.find(s=>s.option.id===o
 if(!a||!b)return null;
 return a.total-b.total;
 }
-let a=lo,b=hi,fa=diffAt(a),fb=diffAt(b);
-if(fa===null||fb===null||fa*fb>0)return null;
+const n=40,xs=[],fs=[];
+for(let i=0;i<=n;i++){xs.push(lo+(hi-lo)*i/n);fs.push(diffAt(xs[i]));}
+let pick=-1,pd=Infinity;
+for(let i=0;i<n;i++){
+const f1=fs[i],f2=fs[i+1];
+if(f1===null||f2===null)continue;
+if((f1<0&&f2>=0)||(f1>0&&f2<=0)){const d=Math.abs((xs[i]+xs[i+1])/2-cur);if(d<pd){pd=d;pick=i;}}
+}
+if(pick<0)return null;
+let a=xs[pick],b=xs[pick+1],fa=fs[pick];
 for(let i=0;i<60;i++){
 const mid=(a+b)/2,fm=diffAt(mid);
+if(fm===null)break;
 if(fa*fm<=0){b=mid;}else{a=mid;fa=fm;}
 }
 return(a+b)/2;
@@ -1665,8 +1766,9 @@ const rng=mulberry32(seed);
 const active=model.criteria.filter(c=>c.uncertainty&&c.uncertainty.kind!=='none');
 if(!active.length)return null;
 const stats={};
+const mat=materialize(model);
 model.criteria.forEach(c=>{
-const vals=model.options.map(o=>o.values[c.id]).filter(v=>typeof v==='number');
+const vals=mat.options.map(o=>o.values[c.id]).filter(v=>typeof v==='number');
 stats[c.id]={min:vals.length?Math.min(...vals):0,max:vals.length?Math.max(...vals):1};
 });
 const rankLists={};model.options.forEach(o=>{rankLists[o.id]=[];});
@@ -1680,7 +1782,10 @@ const sigma=unc.kind==='abs'?unc.value:(unc.value/100)*((st.max-st.min)||1);
 clone.options.forEach(o=>{
 const base=o.values[c.id];
 if(typeof base!=='number')return;
-o.values[c.id]=clamp(base+randNormal(rng)*sigma,st.min,st.max);
+let nv=base+randNormal(rng)*sigma;
+if(st.min>=0)nv=Math.max(0,nv);
+if(c.scale.kind==='log-linear')nv=Math.max(nv,st.min>0?st.min/1000:1e-9);
+o.values[c.id]=nv;
 });
 });
 const r=ENGINE.score(clone);
@@ -1743,24 +1848,31 @@ return flips.length?{triggered:true,flips}:null;
 }
 function flipSentence(model,cr,otherOpt,ft){
 if(ft.tStar===null||!ft.inRange)return'No weight for '+cr.label+' between 0 and 100 changes the winner.';
-return'The winner changes to '+otherOpt.label+' when '+cr.label+' exceeds '+ft.tStar.toFixed(1)+' points (currently '+cr.weight.toFixed(1)+').';
+const w0=critShare(model,cr.id);
+return'The winner changes to '+otherOpt.label+' when '+cr.label+' '+(ft.tStar<w0?'falls below':'exceeds')+' '+ft.tStar.toFixed(1)+' points (currently '+w0.toFixed(1)+').';
 }
 function closestFlipSentence(cf,model){
 if(!cf)return'No single weight change unseats the current winner within 0\u2013100 points.';
 const cr=model.criteria.find(c=>c.id===cf.criterionId);
 const d=cf.tStar-cf.w0;
-return'Closest flip: '+cr.label+', '+(d>=0?'+':'')+d.toFixed(1)+' points.';
+const ch=model.options.find(o=>o.id===cf.against);
+return'Closest flip: '+cr.label+', '+(d>=0?'+':'\u2212')+Math.abs(d).toFixed(1)+' points'+(ch?' ('+ch.label+' takes first place)':'')+'.';
 }
-function toleranceSentence(model,opt,cr,tol){
-if(!tol.possible)return opt.label+' has no '+cr.label+' value within the extended range that flips this ranking.';
+function toleranceSentence(model,opt,cr,tol,role){
+if(!tol.possible){
+if(typeof opt.values[cr.id]!=='number')return opt.label+'\u2019s '+cr.label+' input is not numeric, so no tolerance applies.';
+return opt.label+' has no '+cr.label+' value within the extended range that flips this ranking.';
+}
 const dir=tol.raw>tol.currentRaw?'rises above':'falls below';
-return opt.label+' loses if its '+cr.label.toLowerCase()+' '+dir+' '+fmt(tol.raw,2,cr.unit)+' (currently '+fmt(tol.currentRaw,2,cr.unit)+').';
+const lead=role==='challenger'?' overtakes the leader if its ':' loses first place if its ';
+return opt.label+lead+cr.label.toLowerCase()+' '+dir+' '+fmt(tol.raw,2,cr.unit)+' (currently '+fmt(tol.currentRaw,2,cr.unit)+').';
 }
 function robustnessSentence(shares,model){
 let best=null;
 Object.keys(shares).forEach(id=>{if(best===null||shares[id]>shares[best])best=id;});
 if(best===null)return'No option wins under any sampled weighting.';
 const opt=model.options.find(o=>o.id===best);
+if(!opt)return'No option wins under any sampled weighting.';
 return opt.label+' wins under '+(shares[best]*100).toFixed(0)+'% of all possible weightings.';
 }
 const ANALYSIS={
@@ -1774,6 +1886,32 @@ function csvCell(s){
 s=String(s);
 if(/[",\n]/.test(s))return'"'+s.replace(/"/g,'""')+'"';
 return s;
+}
+function gateSummary(c,model){
+model=model||STORE.model;
+const lab=id=>{const k=model&&model.criteria.find(x=>x.id===id);return k?k.label:String(id);};
+const lit=v=>typeof v==='string'?'\u201c'+v+'\u201d':String(v);
+switch(c.t){
+case'cmp':return lab(c.criterion)+' '+({'==':'=','!=':'\u2260','<=':'\u2264','>=':'\u2265'}[c.op]||c.op)+' '+lit(c.value);
+case'between':return lab(c.criterion)+' between '+lit(c.lo)+' and '+lit(c.hi);
+case'in':return lab(c.criterion)+' is one of '+(c.values||[]).map(lit).join(', ');
+case'tag':return'has tag \u201c'+c.value+'\u201d';
+case'missing':return lab(c.criterion)+' is missing';
+case'all':return'all of ('+(c.of||[]).map(x=>gateSummary(x,model)).join('; ')+')';
+case'any':return'any of ('+(c.of||[]).map(x=>gateSummary(x,model)).join('; ')+')';
+case'not':return'not ('+gateSummary((c.of||[])[0]||{},model)+')';
+default:return'unknown condition';
+}
+}
+function recordExtra(model,result){
+const cf=ANALYSIS.closestFlip(model,result);
+const live=liveAnalysis(model);
+const extra={closestFlip:ANALYSIS.closestFlipSentence(cf,model),robustness:live.robustness?ANALYSIS.robustnessSentence(live.robustness.shares,model):null,monteCarlo:null};
+if(live.mc&&result.winner){
+const b=live.mc.byOption[result.winner.id];
+if(b)extra.monteCarlo=result.winner.label+' ranks first in '+Math.round(b.pRank1*100)+'% of '+live.mc.samples+' samples (seed '+live.mc.seed+')'+(STORE.ui.mcAssumed?' (assumed uncertainty)':'')+'.';
+}
+return extra;
 }
 const EXPORT={
 criterionFormats(cr,stats,colLetter){
@@ -1859,19 +1997,31 @@ lines.push('## Options considered');
 model.options.forEach(o=>lines.push('- '+o.label));
 lines.push('');
 lines.push('## Criteria');
-model.criteria.forEach(c=>lines.push('- **'+c.label+'** ('+(c.unit||'\u2014')+'), '+c.direction+' is better, '+NORMALIZERS[c.scale.kind].label+(c.scale.kind==='custom'?' ['+c.scale.params.expr+']':'')+', weight '+c.weight+' pts'));
+model.criteria.forEach(c=>lines.push('- **'+c.label+'** ('+(c.unit||'\u2014')+'), '+(dirApplicableKind(c.scale.kind)?(c.direction==='min'?'lower':'higher')+' is better':'shape sets direction')+', '+NORMALIZERS[c.scale.kind].label+(c.scale.kind==='custom'?' ['+c.scale.params.expr+']':'')+', weight '+c.weight+' pts'));
 lines.push('');
 lines.push('## Method');
-lines.push('Aggregation: '+model.aggregate.kind+(model.aggregate.kind==='power-mean'?' (p='+model.aggregate.p+')':'')+(model.aggregate.kind==='custom'?' = '+model.aggregate.expr:''));
+lines.push('Aggregation: '+methodName(model.aggregate,true)+(model.aggregate.kind==='custom'?' = '+model.aggregate.expr:''));
+const tbc=(model.aggregate.tiebreak||[]).map(id=>model.criteria.find(c=>c.id===id)).filter(Boolean);
+if(tbc.length)lines.push('Exact ties are broken by '+tbc.map(c=>c.label).join(', ')+'.');
 lines.push('');
 if(model.gates.length){
 lines.push('## Gates');
-model.gates.forEach(g=>lines.push('- '+g.label+' ('+g.severity+')'));
+model.gates.forEach(g=>lines.push('- '+g.label+' ('+g.severity+(g.severity==='soft'?', \u2212'+g.penalty+' pts':'')+'): '+gateSummary(g.when,model)));
 lines.push('');
 }
 lines.push('## Ranking');
 lines.push(this.rankingMarkdown(model,result));
 lines.push('');
+if(result.excluded.length){
+lines.push('## Excluded');
+result.excluded.forEach(e=>lines.push('- '+e.option.label+': '+e.gate+'. '+e.message));
+lines.push('');
+}
+if(result.incomplete.length){
+lines.push('## Incomplete');
+result.incomplete.forEach(e=>lines.push('- '+e.option.label+': missing '+e.missing.map(id=>{const c=model.criteria.find(x=>x.id===id);return c?c.label:id;}).join(', ')));
+lines.push('');
+}
 if(result.winner&&result.runnerUp){
 lines.push('## Winner');
 lines.push(result.winner.label+' wins by '+result.margin.toFixed(1)+' points ('+(result.marginPct||0).toFixed(1)+'%).');
@@ -1944,6 +2094,79 @@ return lines.join('\n');
 };
 
 
+function normCond(c,cm){
+if(!c||typeof c!=='object'||Array.isArray(c))return null;
+if(c.t==='all'||c.t==='any'||c.t==='not'){
+if(!Array.isArray(c.of))return null;
+if(c.t==='not'){const k=normCond(c.of[0],cm);return k?{t:'not',of:[k]}:null;}
+const of=c.of.map(x=>normCond(x,cm)).filter(Boolean);
+return of.length?{t:c.t,of}:null;
+}
+if(!['cmp','between','in','tag','missing'].includes(c.t))return null;
+if(c.t==='in'&&!Array.isArray(c.values))return null;
+const o=deepClone(c);
+if(typeof o.criterion==='string'&&cm.has(o.criterion))o.criterion=cm.get(o.criterion);
+return o;
+}
+function normalizeModel(raw){
+if(!raw||typeof raw!=='object'||!Array.isArray(raw.criteria)||!Array.isArray(raw.options))throw new Error('bad shape');
+const S=(v,d)=>v===undefined||v===null?d:String(v);
+const OB=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+const NUM=v=>typeof v==='number'&&Number.isFinite(v);
+const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+const cm=new Map(),om=new Map(),seenC=new Set(),seenO=new Set();
+const criteria=raw.criteria.map(c=>{
+c=OB(c)?c:{};
+const rid=S(c.id,'');
+let id=rid;
+if(!/^[A-Za-z_][A-Za-z0-9_]*$/.test(id)||seenC.has(id)){id=uid('crit');if(!cm.has(rid)&&!seenC.has(rid))cm.set(rid,id);}
+seenC.add(id);
+const sc=OB(c.scale)?c.scale:{};
+const kind=typeof sc.kind==='string'&&own(NORMALIZERS,sc.kind)?sc.kind:'linear';
+const params=OB(sc.params)&&kind===sc.kind?deepClone(sc.params):{};
+const dp=defaultParams(kind);
+Object.keys(dp).forEach(k=>{if(!own(params,k))params[k]=dp[k];});
+const w=typeof c.weight==='string'&&c.weight.trim()!==''?Number(c.weight):c.weight;
+const uk=OB(c.uncertainty)?c.uncertainty:{};
+const out={id,label:S(c.label,'Criterion'),unit:S(c.unit,''),description:S(c.description,''),direction:c.direction==='min'?'min':'max',scale:{kind,params},weight:NUM(w)&&w>=0?w:0,locked:c.locked===true,missing:['exclude-option','worst','neutral','best','redistribute'].includes(c.missing)?c.missing:'exclude-option',uncertainty:{kind:['none','abs','pct'].includes(uk.kind)?uk.kind:'none',value:NUM(uk.value)?uk.value:0}};
+if(typeof c.formula==='string'&&c.formula.trim()!=='')out.formula=c.formula;
+return out;
+});
+const options=raw.options.map(o=>{
+o=OB(o)?o:{};
+const rid=S(o.id,'');
+let id=rid;
+if(!/^[A-Za-z0-9_-]+$/.test(id)||seenO.has(id)){id=uid('opt');if(!om.has(rid)&&!seenO.has(rid))om.set(rid,id);}
+seenO.add(id);
+const values={};
+if(OB(o.values))Object.keys(o.values).forEach(k=>{if(k==='__proto__')return;values[cm.has(k)?cm.get(k):k]=deepClone(o.values[k]);});
+return{id,label:S(o.label,'Option'),tags:Array.isArray(o.tags)?o.tags.map(t=>String(t)):[],notes:S(o.notes,''),values};
+});
+const gates=(Array.isArray(raw.gates)?raw.gates:[]).map(g=>{
+if(!OB(g)||!OB(g.when))return null;
+const when=normCond(g.when,cm);
+if(!when)return null;
+return{id:S(g.id,uid('gate')),label:S(g.label,'Gate'),severity:g.severity==='soft'?'soft':'hard',penalty:NUM(g.penalty)?g.penalty:0,message:S(g.message,''),when};
+}).filter(Boolean);
+const ra=OB(raw.aggregate)?raw.aggregate:{};
+const aggregate={kind:['power-mean','topsis','custom'].includes(ra.kind)?ra.kind:'power-mean',p:NUM(ra.p)?ra.p:1,tiebreak:(Array.isArray(ra.tiebreak)?ra.tiebreak:[]).filter(t=>typeof t==='string').map(t=>cm.has(t)?cm.get(t):t).filter(t=>seenC.has(t))};
+if(typeof ra.expr==='string')aggregate.expr=ra.expr;
+if(Array.isArray(ra.consts))aggregate.consts=ra.consts.filter(k=>OB(k)&&typeof k.name==='string'&&NUM(k.value)).map(k=>({name:k.name,value:k.value}));
+const presets=(Array.isArray(raw.presets)?raw.presets:[]).filter(p=>OB(p)&&OB(p.weights)).map(p=>{
+const w={};
+Object.keys(p.weights).forEach(k=>{if(k==='__proto__')return;if(NUM(p.weights[k]))w[cm.has(k)?cm.get(k):k]=p.weights[k];});
+return{name:S(p.name,'Preset'),weights:w};
+});
+const rv=OB(raw.view)?raw.view:{};
+const view={sort:'score',pinned:[],seed:1,...rv};
+view.pinned=(Array.isArray(rv.pinned)?rv.pinned:[]).filter(t=>typeof t==='string').map(t=>om.has(t)?om.get(t):t).filter(t=>seenO.has(t));
+view.seed=NUM(rv.seed)?rv.seed:1;
+const m0=OB(raw.meta)?raw.meta:{};
+const md={id:'model',name:'Untitled model',notes:'',created:'',updated:'',source:'user'};
+const meta={...md,...m0};
+Object.keys(md).forEach(k=>{meta[k]=S(m0[k],md[k]);});
+return{schema:1,meta,criteria,options,gates,aggregate,presets,view};
+}
 const STORE=(function(){
 let model=null;
 const ui={activeView:'data',selection:null,editingCell:null,modal:null};
@@ -2021,7 +2244,7 @@ function load(){
 if(lsOK){
 try{
 const raw=localStorage.getItem('rubric.autosave');
-if(raw){model=JSON.parse(raw);past=[];future=[];notify();return'autosave';}
+if(raw){let m=null;try{m=normalizeModel(JSON.parse(raw));}catch(err){m=null;}if(m){model=m;past=[];future=[];notify();return'autosave';}}
 }catch(e){lsOK=false;}
 }
 model=deepClone(EXAMPLES.meridian);
@@ -2030,8 +2253,10 @@ notify();
 return'example';
 }
 function loadModel(m,name){
-model=deepClone(m);
+const nm=normalizeModel(m);
+model=nm;
 past=[];future=[];
+ui.rankExpanded={};ui.editingCell=null;ui.selection=null;ui.mcAssumed=false;ui.ahpJudgments={};ui.ahpIndex=0;ui.ahpFor=null;ui.rocOrder=null;
 autosave();
 notify();
 }
@@ -2056,10 +2281,38 @@ if(nonEmpty.every(v=>String(v).trim()!==''&&Number.isFinite(Number(String(v).tri
 return'categorical';
 }
 function parseTable(text){
-const lines=text.replace(/\r\n?/g,'\n').split('\n').filter(l=>l.length>0);
-if(!lines.length)return[];
-const delim=lines[0].indexOf('\t')>=0?'\t':',';
-return lines.map(l=>l.split(delim));
+const src=text.replace(/\r\n?/g,'\n');
+const first=src.split('\n').find(l=>l.length)||'';
+const d=first.indexOf('\t')>=0?'\t':',';
+const rows=[];
+let row=[],cell='',q=false;
+for(let i=0;i<src.length;i++){
+const ch=src[i];
+if(q){if(ch==='"'){if(src[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=ch;}
+else if(ch==='"'&&cell==='')q=true;
+else if(ch===d){row.push(cell);cell='';}
+else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell='';}
+else cell+=ch;
+}
+if(cell!==''||row.length){row.push(cell);rows.push(row);}
+return rows.filter(r=>r.some(c=>c.trim()!==''));
+}
+function categoryMap(model,critId){
+const cats=[...new Set(materialize(model).options.map(o=>o.values[critId]).filter(v=>!isMissingVal(v)).map(v=>String(v)))];
+const map={};
+cats.forEach((k,i)=>{map[k]=cats.length>1?Math.round((1-i/(cats.length-1))*100)/100:1;});
+return map;
+}
+function paramProblem(cr,key,text){
+const n=Number(text);
+if(!Number.isFinite(n))return'Enter a number.';
+const k=cr?cr.scale.kind:'',p=cr&&cr.scale.params?cr.scale.params:{};
+if(k==='decay'&&key==='halfLife'&&!(n>0))return'Half-life must be greater than 0.';
+if(k==='logistic'&&key==='width'&&!(n>0))return'Width must be greater than 0.';
+if(k==='target-band'&&key==='tol'&&!(n>0))return'Tolerance must be greater than 0.';
+if(k==='target-soft'&&key==='sigma'&&!(n>0))return'Sigma must be greater than 0.';
+if(k==='fixed-linear'&&(key==='lo'||key==='hi')&&n===p[key==='lo'?'hi':'lo'])return'The low and high bounds must differ.';
+return'';
 }
 function defaultParams(kind){
 const norm=NORMALIZERS[kind];
@@ -2077,7 +2330,7 @@ const mm=materialize(model);
 const heads=model.criteria.map((cr,ci)=>`<th data-c="${ci}" class="${cr.type==='categorical'||cr.type==='category'||(model.options.length&&model.options.every(o=>o.values[cr.id]==null||typeof o.values[cr.id]!=='number'))?'txt':''}"><div class="colhead">
 <span>${cr.formula?'\u0192 ':''}${esc(cr.label)}${cr.unit?'<br><small>'+esc(cr.unit)+'</small>':''}</span>
 <span><button class="mini" data-colop="dup" data-c="${ci}" title="Duplicate column">\u29c9</button><button class="mini" data-colop="del" data-c="${ci}" title="Remove column">\u2715</button></span>
-</div></th>`).join('');
+</div></th>`).join('')+`<th data-c="${model.criteria.length}" class="txt"><div class="colhead"><span>Tags</span></div></th>`;
 const rows=model.options.map((opt,ri)=>{
 const labelEditing=STORE.ui.editingCell&&STORE.ui.editingCell.r===ri&&STORE.ui.editingCell.c===-1;
 const labelCell=labelEditing
@@ -2091,7 +2344,10 @@ if(editing)return`<td data-r="${ri}" data-c="${ci}"><input class="cellinput" id=
 const disp=missing?'\u2014':(typeof raw==='number'?fmt(raw,2):esc(String(raw)));
 return`<td data-r="${ri}" data-c="${ci}" class="${!missing&&typeof raw!=='number'?'txt':''}"><div class="cellbox${missing?' missing':''}" tabindex="0" title="${missing?'Missing value':''}">${disp}</div></td>`;
 }).join('');
-return`<tr><td class="lbl" data-r="${ri}" data-c="-1">${labelCell}</td>${cells}</tr>`;
+const tc=model.criteria.length,tagsText=(opt.tags||[]).join(', ');
+const tagEditing=STORE.ui.editingCell&&STORE.ui.editingCell.r===ri&&STORE.ui.editingCell.c===tc;
+const tagCell=tagEditing?`<td data-r="${ri}" data-c="${tc}"><input class="cellinput" id="cellEdit" value="${esc(tagsText)}"></td>`:`<td data-r="${ri}" data-c="${tc}" class="txt"><div class="cellbox${tagsText?'':' missing'}" tabindex="0">${tagsText?esc(tagsText):'\u2014'}</div></td>`;
+return`<tr><td class="lbl" data-r="${ri}" data-c="-1">${labelCell}</td>${cells}${tagCell}</tr>`;
 }).join('');
 $('#v-data').innerHTML=`
 <h1>Data</h1>
@@ -2113,11 +2369,13 @@ const rows=parseTable(text);
 if(rows.length<2){toast('Paste needs a header row and at least one data row.');return;}
 const header=rows[0],body=rows.slice(1);
 const detect=[];
+let tagsCol=-1;
 for(let c=1;c<header.length;c++){
+if(tagsCol<0&&(header[c]||'').trim().toLowerCase()==='tags'){tagsCol=c;continue;}
 const colVals=body.map(r=>(r[c]!==undefined?r[c].trim():''));
-detect.push({label:(header[c]||'Column '+c).trim(),type:inferColType(colVals),direction:'max'});
+detect.push({label:(header[c]||'Column '+c).trim(),type:inferColType(colVals),direction:'max',col:c});
 }
-pendingPaste={header,body,detect};
+pendingPaste={header,body,detect,tagsCol};
 this.renderPasteModal();
 const h=$('#pasteModalTitle');
 if(h){h.setAttribute('tabindex','-1');h.focus();}
@@ -2146,7 +2404,7 @@ upgradeControls();
 },
 closeModal(){$('#modalRoot').innerHTML='';pendingPaste=null;},
 confirmPaste(){
-const{header,body,detect}=pendingPaste;
+const{header,body,detect,tagsCol}=pendingPaste;
 STORE.act('Paste '+body.length+'\u00d7'+detect.length+' block',model=>{
 const critIds=detect.map(d=>{
 let cr=model.criteria.find(c=>c.label.toLowerCase()===d.label.toLowerCase());
@@ -2163,7 +2421,7 @@ detect.forEach((d,i)=>{
 if(d.type!=='categorical')return;
 const cr=model.criteria.find(c=>c.id===critIds[i]);
 if(!cr||cr.scale.kind!=='categorical')return;
-const cats=[...new Set(body.map(r=>(r[i+1]||'').trim()).filter(Boolean))];
+const cats=[...new Set(body.map(r=>(r[d.col]||'').trim()).filter(Boolean))];
 cats.forEach((cat,ci)=>{
 if(!(cat in cr.scale.params.map))cr.scale.params.map[cat]=cats.length>1?Math.round((1-ci/(cats.length-1))*100)/100:1;
 });
@@ -2173,14 +2431,16 @@ const label=(r[0]||'').trim()||'Untitled option';
 let opt=model.options.find(o=>o.label.toLowerCase()===label.toLowerCase());
 if(!opt){opt={id:uid('opt'),label,tags:[],notes:'',values:{}};model.options.push(opt);}
 detect.forEach((d,i)=>{
-const raw=(r[i+1]!==undefined?r[i+1].trim():'');
+const raw=(r[d.col]!==undefined?r[d.col].trim():'');
 const cid=critIds[i];
 if(raw===''){opt.values[cid]=null;return;}
 if(d.type==='numeric'){const n=Number(raw);opt.values[cid]=Number.isFinite(n)?n:null;}
 else if(d.type==='boolean'){opt.values[cid]=/^true$/i.test(raw);}
 else opt.values[cid]=raw;
 });
+if(tagsCol>=0&&r[tagsCol]!==undefined)opt.tags=[...new Set(r[tagsCol].split(',').map(x=>x.trim()).filter(Boolean))];
 });
+if(model.criteria.length&&model.criteria.every(c=>c.weight===0))rebalanceWeights(model.criteria);
 });
 this.closeModal();
 toast('Imported '+body.length+' rows \u00d7 '+detect.length+' columns');
@@ -2279,7 +2539,7 @@ return`<div class="ccard" data-critcard="${cr.id}">
 <label class="flabel">Unit</label><input class="field" data-crit="${cr.id}" data-field="unit" value="${esc(cr.unit||'')}">
 <label class="flabel">Description</label><input class="field" data-crit="${cr.id}" data-field="description" value="${esc(cr.description||'')}">
 ${formulaEditor(cr)}
-<div class="dirblock"${cr.scale.kind==='custom'?' hidden':''}><label class="flabel">Direction</label>
+<div class="dirblock"${dirApplicableKind(cr.scale.kind)?'':' hidden'}><label class="flabel">Direction</label>
 <div class="dirtoggle">
 <button data-crit="${cr.id}" data-field="direction" data-val="max" class="${cr.direction==='max'?'on':''}">Higher is better</button>
 <button data-crit="${cr.id}" data-field="direction" data-val="min" class="${cr.direction==='min'?'on':''}">Lower is better</button>
@@ -2313,6 +2573,89 @@ ${renderCurvePlot(cr,stats)}
 <button class="btn ghost" style="margin-top:10px" data-delcrit="${cr.id}">Remove criterion</button>
 </div>`;
 }
+const GATE_LEAVES=['cmp','between','in','tag','missing'];
+function gateEditable(w){return GATE_LEAVES.includes(w.t)||((w.t==='all'||w.t==='any')&&Array.isArray(w.of)&&w.of.every(x=>GATE_LEAVES.includes(x.t)));}
+function gateParts(w){return GATE_LEAVES.includes(w.t)?{mode:'all',leaves:[w]}:{mode:w.t,leaves:w.of};}
+function gateBuild(mode,leaves){return{t:mode,of:leaves};}
+function gateLeaf(model,t,crit){
+const cid=crit||(model.criteria[0]&&model.criteria[0].id);
+const cr=model.criteria.find(c=>c.id===cid);
+const need=cr?NORMALIZERS[cr.scale.kind].needs:'numeric';
+const dv=need==='numeric'?0:need==='boolean'?true:'';
+if(t==='between')return{t,criterion:cid,lo:dv,hi:dv};
+if(t==='in')return{t,criterion:cid,values:[]};
+if(t==='tag')return{t,value:''};
+if(t==='missing')return{t,criterion:cid};
+return{t:'cmp',criterion:cid,op:'>=',value:dv};
+}
+function newGate(model){return{id:uid('gate'),label:'New gate',severity:'hard',penalty:10,message:'Does not meet this rule.',when:gateBuild('all',[gateLeaf(model,'cmp')])};}
+function gateParse(model,critId,text){
+const cr=model.criteria.find(c=>c.id===critId);
+const need=cr?NORMALIZERS[cr.scale.kind].needs:'categorical';
+const t=String(text).trim();
+if(need==='numeric'){const n=Number(t);return t===''||!Number.isFinite(n)?{ok:false}:{ok:true,value:n};}
+if(need==='boolean')return{ok:true,value:/^(true|yes|1)$/i.test(t)};
+return{ok:true,value:t};
+}
+function gateApplyEdit(model,g,gf,cf,ci,val){
+if(gf){
+if(gf==='label')g.label=val.trim()||g.label;
+else if(gf==='message')g.message=val;
+else if(gf==='severity')g.severity=val==='soft'?'soft':'hard';
+else if(gf==='penalty'){const n=Number(val);if(String(val).trim()===''||!Number.isFinite(n))return'Enter a number for the penalty.';g.penalty=clamp(n,0,100);}
+else if(gf==='mode'){if(!gateEditable(g.when))return'';g.when=gateBuild(val==='any'?'any':'all',gateParts(g.when).leaves);}
+return'';
+}
+if(!gateEditable(g.when))return'';
+const p=gateParts(g.when),leaf=p.leaves[ci];
+if(!leaf)return'';
+if(cf==='t')p.leaves[ci]=gateLeaf(model,val,leaf.criterion);
+else if(cf==='criterion'){const nl=gateLeaf(model,leaf.t,val);if(leaf.t==='cmp')nl.op=leaf.op;p.leaves[ci]=nl;}
+else if(cf==='op')leaf.op=val;
+else if(cf==='value'){
+if(leaf.t==='tag')leaf.value=val.trim();
+else{const r=gateParse(model,leaf.criterion,val);if(!r.ok)return'Enter a number.';leaf.value=r.value;}
+}else if(cf==='lo'||cf==='hi'){const r=gateParse(model,leaf.criterion,val);if(!r.ok)return'Enter a number.';leaf[cf]=r.value;}
+else if(cf==='values'){
+const out=[];
+for(const x of val.split(',').map(q=>q.trim()).filter(q=>q!=='')){const r=gateParse(model,leaf.criterion,x);if(!r.ok)return'Enter numbers separated by commas.';out.push(r.value);}
+leaf.values=out;
+}
+g.when=gateBuild(p.mode,p.leaves);
+return'';
+}
+function gateOpts(list,sel){return list.map(o=>'<option value="'+esc(o[0])+'"'+(o[0]===sel?' selected':'')+'>'+esc(o[1])+'</option>').join('');}
+function gateCritOpts(model,sel){return model.criteria.map(c=>'<option value="'+esc(c.id)+'"'+(c.id===sel?' selected':'')+'>'+esc(c.label)+'</option>').join('')+(model.criteria.some(c=>c.id===sel)?'':'<option value="'+esc(sel)+'" selected>'+esc(sel)+' (not found)</option>');}
+function gateLit(v){return v===undefined||v===null?'':String(v);}
+function gateCondRow(model,g,leaf,i){
+const at='data-gate="'+esc(g.id)+'" data-gcond="'+i+'"';
+let h='<div class="paramrow"><select class="field" '+at+' data-gcf="t">'+gateOpts([['cmp','Compare'],['between','Between'],['in','One of'],['tag','Has tag'],['missing','Is missing']],leaf.t)+'</select>';
+if(leaf.t!=='tag')h+='<select class="field" '+at+' data-gcf="criterion">'+gateCritOpts(model,leaf.criterion)+'</select>';
+if(leaf.t==='cmp')h+='<select class="field" '+at+' data-gcf="op">'+gateOpts(['<','<=','>','>=','==','!='].map(o=>[o,o]),leaf.op)+'</select><input class="field" '+at+' data-gcf="value" value="'+esc(gateLit(leaf.value))+'">';
+if(leaf.t==='between')h+='<input class="field" '+at+' data-gcf="lo" value="'+esc(gateLit(leaf.lo))+'"><input class="field" '+at+' data-gcf="hi" value="'+esc(gateLit(leaf.hi))+'">';
+if(leaf.t==='in')h+='<input class="field" '+at+' data-gcf="values" placeholder="a, b, c" value="'+esc((leaf.values||[]).map(gateLit).join(', '))+'">';
+if(leaf.t==='tag')h+='<input class="field" '+at+' data-gcf="value" placeholder="tag name" value="'+esc(gateLit(leaf.value))+'">';
+return h+'<button class="mini" type="button" data-gateop="delcond" data-gate="'+esc(g.id)+'" data-gcond="'+i+'" title="Remove condition" aria-label="Remove condition">\u2715</button></div>';
+}
+function renderGates(model){
+const blocks=model.gates.map(g=>{
+const at='data-gate="'+esc(g.id)+'"',soft=g.severity==='soft',ed=gateEditable(g.when);
+let h='<div class="exrow" style="margin-top:10px"><label class="flabel">Label</label><input class="field" '+at+' data-gfield="label" value="'+esc(g.label)+'">';
+h+='<div class="paramrow"><div><label class="flabel">Severity</label><select class="field" '+at+' data-gfield="severity">'+gateOpts([['hard','Hard: excludes the option'],['soft','Soft: subtracts points']],g.severity)+'</select></div>';
+if(soft)h+='<div><label class="flabel">Penalty (points)</label><input class="field" type="number" min="0" max="100" step="any" '+at+' data-gfield="penalty" value="'+esc(gateLit(g.penalty))+'"></div>';
+h+='</div><label class="flabel">Message</label><input class="field" '+at+' data-gfield="message" value="'+esc(g.message)+'">';
+if(ed){
+const parts=gateParts(g.when);
+h+='<label class="flabel">Match</label><select class="field" '+at+' data-gfield="mode">'+gateOpts([['all','All conditions'],['any','Any condition']],parts.mode)+'</select>';
+h+=parts.leaves.map((leaf,i)=>gateCondRow(model,g,leaf,i)).join('');
+h+='<button class="btn ghost" type="button" data-gateop="addcond" '+at+'>Add condition</button> ';
+}else{
+h+='<p class="viewsub">'+esc(gateSummary(g.when,model))+'</p><p class="viewsub">This gate was imported with nested rules, so only its label, severity, penalty and message can be edited.</p>';
+}
+return h+'<button class="btn ghost" type="button" data-gateop="del" '+at+'>Remove gate</button></div>';
+}).join('');
+return'<div class="panel" style="margin-top:14px"><h3 style="margin-top:0">Gates</h3><p class="viewsub">Rules an option must meet. A hard gate excludes the option; a soft gate subtracts points.</p>'+(blocks||'<p class="viewsub">No gates yet.</p>')+'<div class="toolbar" style="margin-top:10px"><button class="btn" type="button" data-gateop="add"'+(model.criteria.length?'':' disabled')+'>Add gate</button></div></div>';
+}
 VIEWS.criteria={
 render(){
 const model=STORE.model;
@@ -2324,7 +2667,8 @@ $('#v-criteria').innerHTML=`
 <h1>Criteria</h1>
 <p class="viewsub">What each criterion measures, how a raw value becomes points, and what happens when it is missing.</p>
 <div class="toolbar"><button class="btn" data-act="addCriterion">Add criterion</button></div>
-<div class="criteria-grid">${cards||'<p class="viewsub">No criteria yet. Add one, or open an example model.</p>'}</div>`;
+<div class="criteria-grid">${cards||'<p class="viewsub">No criteria yet. Add one, or open an example model.</p>'}</div>
+${renderGates(model)}`;
 }
 };
 
@@ -2354,12 +2698,13 @@ return`<div class="wsummary">
 </div>`;
 }
 
-function ahpSliderText(s){
+function ahpJudgments(ids){const J=STORE.ui.ahpJudgments||{};return WEIGHTS.allPairs(ids).map(p=>({i:p.i,j:p.j,ratio:WEIGHTS.sliderToRatio(-(J[ids[p.i]+'|'+ids[p.j]]||0))}));}
+function ahpSliderText(s,nameA,nameB){
 s=+s;
-const words={1:'slightly',2:'slightly',3:'moderately',4:'moderately',5:'strongly',6:'strongly',7:'very strongly',8:'extremely'};
+const words={2:'slightly',3:'moderately',4:'moderately to strongly',5:'strongly',6:'strongly to very strongly',7:'very strongly',8:'very to extremely',9:'extremely'};
 if(s===0)return'Equally important';
-if(s>0)return'Left is '+words[s]+' more important ('+WEIGHTS.sliderToRatio(s).toFixed(0)+'\u00d7)';
-return'Right is '+words[-s]+' more important ('+WEIGHTS.sliderToRatio(s).toFixed(2)+'\u00d7)';
+const ratio=1+Math.abs(s),winner=s<0?nameA:nameB;
+return winner+' is '+words[ratio]+' more important ('+ratio+'\u00d7)';
 }
 
 VIEWS.weights={
@@ -2398,7 +2743,7 @@ return`<p class="viewsub">Resets every criterion to the same weight. Useful as a
 <button class="btn primary" id="applyEqualBtn">Set all weights equal</button>`;
 },
 renderRoc(model){
-if(!STORE.ui.rocOrder||STORE.ui.rocOrder.length!==model.criteria.length){
+if(!STORE.ui.rocOrder||STORE.ui.rocOrder.length!==model.criteria.length||!model.criteria.every(c=>STORE.ui.rocOrder.includes(c.id))){
 STORE.ui.rocOrder=model.criteria.map(c=>c.id);
 }
 const order=STORE.ui.rocOrder;
@@ -2419,6 +2764,8 @@ return`<p class="viewsub">Order criteria by importance, most important first. We
 },
 renderAhp(model){
 const ids=model.criteria.map(c=>c.id);
+const sig=ids.join('|');
+if(STORE.ui.ahpFor!==sig){STORE.ui.ahpFor=sig;STORE.ui.ahpIndex=0;STORE.ui.ahpJudgments={};}
 if(ids.length<2)return'<p class="viewsub">Pairwise comparison needs at least two criteria.</p>';
 const pairs=WEIGHTS.allPairs(ids);
 if(STORE.ui.ahpIndex===undefined||STORE.ui.ahpIndex>pairs.length)STORE.ui.ahpIndex=0;
@@ -2427,25 +2774,25 @@ const idx=STORE.ui.ahpIndex;
 if(idx<pairs.length){
 const pair=pairs[idx];
 const crA=model.criteria.find(c=>c.id===ids[pair.i]),crB=model.criteria.find(c=>c.id===ids[pair.j]);
-const key=pair.i+'-'+pair.j;
+const key=ids[pair.i]+'|'+ids[pair.j];
 const s=STORE.ui.ahpJudgments[key]!==undefined?STORE.ui.ahpJudgments[key]:0;
 return`<p class="viewsub">Pair ${idx+1} of ${pairs.length}. Move the slider toward whichever matters more, and by how much.</p>
 <div class="ahppair">
 <div class="pairnames"><span>${esc(crA.label)}</span><span>${esc(crB.label)}</span></div>
-<input type="range" min="-8" max="8" step="1" value="${s}" id="ahpSlider" data-i="${pair.i}" data-j="${pair.j}">
-<p class="viewsub" id="ahpSliderLabel">${ahpSliderText(s)}</p>
+<input type="range" min="-8" max="8" step="1" value="${s}" id="ahpSlider" data-key="${esc(key)}" data-a="${esc(crA.label)}" data-b="${esc(crB.label)}">
+<p class="viewsub" id="ahpSliderLabel">${esc(ahpSliderText(s,crA.label,crB.label))}</p>
 </div>
 <div class="ahpnav">
 <button class="btn ghost" id="ahpBack" ${idx===0?'disabled':''}>Back</button>
 <button class="btn primary" id="ahpNext">${idx===pairs.length-1?'See result':'Next'}</button>
 </div>`;
 }
-const judgments=pairs.map(p=>({i:p.i,j:p.j,ratio:WEIGHTS.sliderToRatio(STORE.ui.ahpJudgments[p.i+'-'+p.j]||0)}));
-const result=WEIGHTS.pairwiseResult(ids,judgments);
+const result=WEIGHTS.pairwiseResult(ids,ahpJudgments(ids));
 const rows=ids.map(id=>`<span class="dchip">${esc(model.criteria.find(c=>c.id===id).label)} <b>${result.weights[id].toFixed(1)}</b> pts</span>`).join('');
 const worst=result.worst.map(w=>{
 const crA=model.criteria.find(c=>c.id===w.idA),crB=model.criteria.find(c=>c.id===w.idB);
-return`<li>${esc(crA.label)} vs ${esc(crB.label)}: you said ${w.ratio.toFixed(1)}\u00d7, the rest of your answers imply ${w.impliedRatio.toFixed(1)}\u00d7. <button class="linkbtn" data-revisit="${w.i}-${w.j}">Revisit</button></li>`;
+const side=r=>Math.abs(r-1)<0.05?esc(crA.label)+' and '+esc(crB.label)+' are equally important':r<1?esc(crB.label)+' is '+(1/r).toFixed(1)+'\u00d7 more important than '+esc(crA.label):esc(crA.label)+' is '+r.toFixed(1)+'\u00d7 more important than '+esc(crB.label);
+return`<li>${esc(crA.label)} vs ${esc(crB.label)}: you said ${side(w.ratio)}, the rest of your answers imply ${side(w.impliedRatio)}. <button class="linkbtn" data-revisit="${w.i}-${w.j}">Revisit</button></li>`;
 }).join('');
 return`<p class="viewsub">All ${pairs.length} pairs answered.</p>
 <div class="ahpresult ${result.CR>0.10?'cr-bad':''}">
@@ -2477,16 +2824,18 @@ if(expanded){
 const critRows=model.criteria.map(c=>{
 const contrib=s.contributions[c.id];
 const raw=s.option.values[c.id];
-const rawDisp=(raw===null||raw===undefined||raw==='')?'\u2014':(typeof raw==='number'?fmt(raw,2,c.unit):esc(String(raw)));
+const imp=result.imputations.find(i=>i.optionId===s.option.id&&i.criterionId===c.id&&i.policy!=='redistribute');
+const rawDisp=imp?'\u2014 (imputed: '+esc(imp.policy)+')':(raw===null||raw===undefined||raw==='')?'\u2014':(typeof raw==='number'?fmt(raw,2,c.unit):esc(String(raw)));
 const normDisp=contrib&&contrib.v!==null?contrib.v.toFixed(3):'\u2014';
-const wpts=(c.weight/weightSum*100).toFixed(1);
+const wpts=contrib&&contrib.w!==undefined?(contrib.w*100).toFixed(1):'0.0';
 const ptsDisp=contrib&&contrib.v!==null?(contrib.weighted*100).toFixed(1):'0.0';
 return`<tr><td>${esc(c.label)}</td><td>${rawDisp}</td><td>${normDisp}</td><td>${wpts}</td><td>${ptsDisp}</td></tr>`;
 }).join('');
 const penRows=(s.penalties||[]).map(p=>`<tr><td colspan="4">Penalty: ${esc(p.gate)}</td><td>-${p.points}</td></tr>`).join('');
+const methodRow=model.aggregate.kind!=='power-mean'||model.aggregate.p!==1?`<tr><td colspan="5"><i>Points show the weighted-sum view; the total uses ${esc(methodName(model.aggregate))}.</i></td></tr>`:'';
 breakdown=`<div class="rankbreakdown"><table>
 <thead><tr><th>Criterion</th><th>Raw</th><th>Normalized</th><th>Weight pts</th><th>Points</th></tr></thead>
-<tbody>${critRows}${penRows}<tr><td colspan="4"><b>Total</b></td><td><b>${s.total.toFixed(1)}</b></td></tr></tbody>
+<tbody>${critRows}${penRows}<tr><td colspan="4"><b>Total</b></td><td><b>${s.total.toFixed(1)}</b></td></tr>${methodRow}</tbody>
 </table></div>`;
 }
 return`<div class="rankrow" data-rankrow="${s.option.id}">
@@ -2513,7 +2862,7 @@ const bp=(bv&&bv.v!==null)?bv.weighted*100:0;
 return{label:c.label,delta:ap-bp};
 }).sort((x,y)=>Math.abs(y.delta)-Math.abs(x.delta));
 h2h=`<div class="h2h"><h3 style="margin-top:0">${esc(a.option.label)} vs ${esc(b.option.label)}</h3>
-${deltas.map(d=>`<div class="h2hrow"><span>${esc(d.label)}</span><span>${d.delta>=0?'+':''}${d.delta.toFixed(1)} pts \u2192 ${esc(a.option.label)}</span></div>`).join('')}
+${deltas.map(d=>`<div class="h2hrow"><span>${esc(d.label)}</span><span>+${Math.abs(d.delta).toFixed(1)} pts \u2192 ${esc((d.delta>=0?a:b).option.label)}</span></div>`).join('')}
 </div>`;
 }
 }
@@ -2566,13 +2915,12 @@ const tolRows=[];
 model.criteria.forEach(c=>{
 if(c.formula)return;
 const tolW=ANALYSIS.inputTolerance(model,winner.id,c.id,runnerUp.id);
-tolRows.push('<li>'+esc(ANALYSIS.toleranceSentence(model,winner,c,tolW))+'</li>');
+tolRows.push('<li>'+esc(ANALYSIS.toleranceSentence(model,winner,c,tolW,'leader'))+'</li>');
 const tolR=ANALYSIS.inputTolerance(model,runnerUp.id,c.id,winner.id);
-tolRows.push('<li>'+esc(ANALYSIS.toleranceSentence(model,runnerUp,c,tolR))+'</li>');
+tolRows.push('<li>'+esc(ANALYSIS.toleranceSentence(model,runnerUp,c,tolR,'challenger'))+'</li>');
 });
 
-const robustness=STORE.ui.robustnessResult;
-const mc=STORE.ui.monteCarloResult;
+const{robustness,mc}=liveAnalysis(model);
 
 $('#v-stress').innerHTML=`
 <h1>Stress</h1>
@@ -2617,13 +2965,7 @@ VIEWS.record={
 render(){
 const model=STORE.model;
 const result=ENGINE.score(model);
-const cf=ANALYSIS.closestFlip(model,result);
-const robustness=STORE.ui.robustnessResult;
-const extra={
-closestFlip:ANALYSIS.closestFlipSentence(cf,model),
-robustness:robustness?ANALYSIS.robustnessSentence(robustness.shares,model):null
-};
-const md=EXPORT.decisionRecordMarkdown(model,result,extra);
+const md=EXPORT.decisionRecordMarkdown(model,result,recordExtra(model,result));
 $('#v-record').innerHTML=`
 <h1>Record</h1>
 <p class="viewsub">The full decision, in writing \u2014 copy it, print it, or download the model.</p>
@@ -3135,6 +3477,255 @@ return b[0]===0x50&&b[1]===0x4b&&b.length>1000;
 
 assert('every guided-builder shape compiles to a valid equation',SHAPES.every(h=>EXPR.compile(h.e,customNames({consts:h.p.map(k=>({name:k}))})).ok));
 
+assert('tie-break orders equal totals and recomputes ranks',(()=>{
+const m=fixture3x3(1);
+m.options=[{id:'p',label:'P',tags:[],notes:'',values:{a:6,b:5,c:1}},{id:'q',label:'Q',tags:[],notes:'',values:{a:5,b:5,c:3.5}}];
+const t0=ENGINE.score(m);
+m.aggregate.tiebreak=['c'];
+const t1=ENGINE.score(m);
+const rq=t1.ranked.find(x=>x.option.id==='q'),rp=t1.ranked.find(x=>x.option.id==='p');
+return t0.ranked.every(x=>x.rank===1&&x.tied)&&rq.rank===1&&rp.rank===2&&!rq.tied&&!rp.tied&&t1.notes.some(n=>/Tie among/.test(n));
+})());
+assert('pairwise slider toward B gives B the larger weight',(()=>{
+const prev=STORE.ui.ahpJudgments;
+STORE.ui.ahpJudgments={'a|b':4};
+const j=ahpJudgments(['a','b']);
+STORE.ui.ahpJudgments=prev;
+const r=WEIGHTS.pairwiseResult(['a','b'],j);
+return r.weights.b>r.weights.a;
+})());
+assert('pairwise slider text names the winner and uses the Saaty ratio',ahpSliderText(-4,'Cost','Speed')==='Cost is strongly more important (5\u00d7)'&&ahpSliderText(8,'Cost','Speed')==='Speed is extremely more important (9\u00d7)'&&ahpSliderText(0,'Cost','Speed')==='Equally important');
+assert('stale robustness and Monte Carlo results are ignored after the model changes',(()=>{
+const pr=STORE.ui.robustnessResult,pm=STORE.ui.monteCarloResult;
+STORE.ui.robustnessResult={samples:1,validSamples:1,shares:{gone:1},sig:analysisSig(EXAMPLES.meridian)};
+STORE.ui.monteCarloResult={seed:1,samples:1,byOption:{},sig:analysisSig(EXAMPLES.meridian)};
+const same=liveAnalysis(EXAMPLES.meridian),other=liveAnalysis(EXAMPLES.supplier);
+STORE.ui.robustnessResult=pr;STORE.ui.monteCarloResult=pm;
+return same.robustness&&same.mc&&other.robustness===null&&other.mc===null;
+})());
+assert('robustnessSentence survives an option id that is not in the model',ANALYSIS.robustnessSentence({gone:1},EXAMPLES.supplier)==='No option wins under any sampled weighting.');
+assert('normalizeModel passes every example through unchanged',Object.keys(EXAMPLES).every(k=>JSON.stringify(normalizeModel(deepClone(EXAMPLES[k])))===JSON.stringify(EXAMPLES[k])));
+assert('normalizeModel rejects non-arrays and fills an empty model so scoring does not throw',(()=>{
+let threw=false;
+try{normalizeModel({criteria:{},options:[]});}catch(e){threw=e.message==='bad shape';}
+const m=normalizeModel({criteria:[],options:[]});
+const r=ENGINE.score(m);
+return threw&&Array.isArray(m.gates)&&m.meta.name==='Untitled model'&&r.ranked.length===0;
+})());
+assert('normalizeModel replaces unsafe ids and remaps every reference',(()=>{
+const m=normalizeModel({criteria:[{id:'a"><b',label:'A',weight:'40',scale:{kind:'nope',params:{}}},{id:'ok',label:'B',weight:-3}],options:[{id:'o"1',label:'O',values:{'a"><b':5,ok:2}},{id:'o2',label:'P',values:{}}],gates:[{label:'g',severity:'hard',when:{t:'cmp',criterion:'a"><b',op:'>',value:1}},{label:'nowhen'}],aggregate:{kind:'power-mean',p:1,tiebreak:['a"><b']},presets:[{name:'x',weights:{'a"><b':50}}],view:{pinned:['o"1','missing']}});
+const nc=m.criteria[0].id,no=m.options[0].id;
+return /^[A-Za-z_][A-Za-z0-9_]*$/.test(nc)&&/^[A-Za-z0-9_-]+$/.test(no)&&m.options[0].values[nc]===5&&m.gates.length===1&&m.gates[0].when.criterion===nc&&m.aggregate.tiebreak[0]===nc&&m.presets[0].weights[nc]===50&&m.view.pinned.length===1&&m.view.pinned[0]===no&&m.criteria[0].weight===40&&m.criteria[0].scale.kind==='linear'&&m.criteria[1].weight===0;
+})());
+assert('a text value in a numeric criterion counts as missing instead of making the total NaN',(()=>{
+const m=fixture3x3(1);
+m.criteria[0].missing='neutral';
+m.options[0].values.a='abc';
+const r=ENGINE.score(m);
+const imp=r.imputations.filter(i=>i.optionId==='x'&&i.criterionId==='a');
+return r.ranked.every(x=>Number.isFinite(x.total))&&imp.length===1&&imp[0].policy==='neutral'&&r.notes.some(n=>/is not a number/.test(n));
+})());
+assert('all-zero weights score 0 under the geometric and harmonic means',[0,-1,1].every(p=>{
+const m=fixture3x3(p);
+m.criteria.forEach(c=>{c.weight=0;});
+const r=ENGINE.score(m);
+return r.ranked.length===3&&r.ranked.every(x=>x.total===0);
+}));
+assert('removing a criterion prunes gates, tie-breaks and keeps weights at 100',(()=>{
+const m=deepClone(EXAMPLES.meridian);
+const gs=m.gates.length;
+const rc=removeCriterion(m,'spare_seats_pct');
+const r=ENGINE.score(m);
+return rc.gatesTouched===1&&m.gates.length===gs-1&&r.ranked.length>0&&Math.abs(sum(m.criteria.map(c=>c.weight))-100)<1e-6&&!m.options.some(o=>'spare_seats_pct' in o.values);
+})());
+assert('removing a criterion reports formulas and the custom equation that still use it',(()=>{
+const m=fixture3x3(1);
+m.criteria.push({id:'d',label:'D',unit:'',description:'',direction:'max',scale:{kind:'fixed-linear',params:{lo:0,hi:20}},weight:0,locked:false,missing:'exclude-option',uncertainty:{kind:'none',value:0},formula:'a + b'});
+m.aggregate={kind:'custom',p:1,tiebreak:[],expr:'wmin + a',consts:[]};
+const rc=removeCriterion(m,'a');
+return rc.refs.includes('D')&&rc.refs.includes('Custom scoring equation')&&m.criteria.length===3;
+})());
+assert('rebalanceWeights brings the total back to exactly 100',(()=>{
+const cs=[{weight:30,locked:true},{weight:30,locked:false},{weight:10,locked:false}];
+rebalanceWeights(cs);
+return cs[0].weight===30&&Math.abs(sum(cs.map(c=>c.weight))-100)<1e-9;
+})());
+assert('flip thresholds do not assume weights sum to 100 and count soft penalties',(()=>{
+const full=fixture3x3(1),half=fixture3x3(1);
+half.criteria.forEach(c=>{c.weight=c.weight/2;});
+const t1=ANALYSIS.flipThreshold(full,ENGINE.score(full),'a','x','y').tStar;
+const t2=ANALYSIS.flipThreshold(half,ENGINE.score(half),'a','x','y').tStar;
+const pm=fixture3x3(1);
+pm.gates=[{id:'g',label:'g',severity:'soft',penalty:10,message:'m',when:{t:'cmp',criterion:'a',op:'<',value:5}}];
+const t3=ANALYSIS.flipThreshold(pm,ENGINE.score(pm),'a','x','y').tStar;
+const n3=ANALYSIS.flipThresholdNumeric(pm,'a','x','y',50).tStar;
+return approx(t1,70/1.7,0.01)&&approx(t2,70/1.7,0.01)&&approx(t3,80/1.7,0.01)&&approx(t3,n3,0.01);
+})());
+assert('flipSentence says falls below when the threshold is under the current share',(()=>{
+const m=fixture3x3(1),r=ENGINE.score(m);
+const ft=ANALYSIS.flipThreshold(m,r,'a','x','y');
+return/falls below 41\.2 points \(currently 50\.0\)/.test(ANALYSIS.flipSentence(m,m.criteria[0],m.options[1],ft));
+})());
+assert('closest flip names the challenger',(()=>{
+const m=fixture3x3(1),cf=ANALYSIS.closestFlip(m,ENGINE.score(m));
+return!!cf&&/takes first place\)\.$/.test(ANALYSIS.closestFlipSentence(cf,m));
+})());
+assert('toleranceSentence distinguishes the leader from the challenger and non-numeric inputs',(()=>{
+const m=fixture3x3(1),cr=m.criteria[0],tol={possible:true,raw:3,currentRaw:1};
+const a=ANALYSIS.toleranceSentence(m,{label:'P',values:{a:1}},cr,tol,'leader');
+const b=ANALYSIS.toleranceSentence(m,{label:'P',values:{a:1}},cr,tol,'challenger');
+const c=ANALYSIS.toleranceSentence(m,{label:'P',values:{a:'abc'}},cr,{possible:false},'leader');
+return/loses first place/.test(a)&&/overtakes the leader/.test(b)&&/not numeric/.test(c);
+})());
+assert('input tolerance finds a crossing when the score is not monotonic in the input',(()=>{
+const base={unit:'',description:'',direction:'max',weight:50,locked:false,missing:'exclude-option',uncertainty:{kind:'none',value:0}};
+const m={schema:1,meta:{id:'t',name:'t',notes:'',created:'',updated:'',source:'user'},
+criteria:[{...base,id:'a',label:'A',scale:{kind:'target-band',params:{ideal:5,tol:3}}},{...base,id:'b',label:'B',scale:{kind:'fixed-linear',params:{lo:0,hi:10}}}],
+options:[{id:'x',label:'X',tags:[],notes:'',values:{a:2,b:6}},{id:'y',label:'Y',tags:[],notes:'',values:{a:5,b:0}},{id:'z',label:'Z',tags:[],notes:'',values:{a:10,b:0}}],
+gates:[],aggregate:{kind:'power-mean',p:1,tiebreak:[]},presets:[],view:{sort:'score',pinned:[],seed:1}};
+const t=ANALYSIS.inputTolerance(m,'x','a','y');
+return t.possible&&approx(t.raw,3.2,0.01);
+})());
+assert('TOPSIS ignores redistributed missing values instead of treating them as zero',(()=>{
+const base={unit:'',description:'',direction:'max',locked:false,uncertainty:{kind:'none',value:0},scale:{kind:'fixed-linear',params:{lo:0,hi:10}}};
+const m=fixture3x3(1);
+m.criteria=[{...base,id:'a',label:'A',weight:50,missing:'exclude-option'},{...base,id:'b',label:'B',weight:50,missing:'redistribute'}];
+m.options=[{id:'x',label:'X',tags:[],notes:'',values:{a:10}},{id:'y',label:'Y',tags:[],notes:'',values:{a:5,b:10}}];
+m.aggregate={kind:'topsis',p:1,tiebreak:[]};
+const x=ENGINE.score(m).ranked.find(e=>e.option.id==='x');
+return approx(x.total,100,1e-6);
+})());
+assert('applyDirect leaves the total at exactly 100 after rounding',(()=>{
+const cs=[{id:'a',weight:34,locked:false},{id:'b',weight:33,locked:false},{id:'c',weight:33,locked:false}];
+const r=WEIGHTS.applyDirect(cs,'a',20);
+return r.ok&&Math.abs(sum(Object.values(r.weights))-100)<1e-9&&r.weights.a===20;
+})());
+assert('direction only applies to kinds where it has meaning',dirApplicableKind('linear')&&!dirApplicableKind('target-soft')&&!dirApplicableKind('target-band')&&!dirApplies({direction:'min',scale:{kind:'target-soft'}})&&dirApplies({direction:'min',scale:{kind:'linear'}}));
+assert('bad normalizer parameters raise a handled error instead of NaN',(()=>{
+const bad=[['decay',{halfLife:0}],['logistic',{midpoint:0,width:0}],['target-band',{ideal:0,tol:0}],['target-soft',{ideal:0,sigma:0}],['fixed-linear',{lo:3,hi:3}]];
+return bad.every(([k,p])=>{try{NORMALIZERS[k].fn(1,p,{min:0,max:1,values:[0,1]});return false;}catch(e){return true;}})&&NORMALIZERS.decay.fn(-5,{halfLife:10}).v===1;
+})());
+assert('engine notes are de-duplicated',(()=>{
+const n=ENGINE.score(fixture3x3(-1)).notes;
+return n.filter(x=>/floored/.test(x)).length===1&&n.length===new Set(n).size;
+})());
+assert('contributions carry their effective weight and penalties list each soft gate',(()=>{
+const m=fixture3x3(1);
+m.gates=[{id:'g1',label:'First',severity:'soft',penalty:5,message:'m',when:{t:'cmp',criterion:'a',op:'>',value:100}},{id:'g2',label:'Second',severity:'soft',penalty:3,message:'m',when:{t:'cmp',criterion:'a',op:'>',value:100}}];
+const r=ENGINE.score(m),x=r.ranked.find(e=>e.option.id==='x');
+return approx(x.contributions.a.w,0.5)&&x.penalties.length===2&&x.penalties[0].gate==='First'&&x.penalties[1].points===3;
+})());
+assert('method names match the scoring-method panel labels',methodName({kind:'power-mean',p:1})==='Weighted sum'&&methodName({kind:'power-mean',p:0})==='Geometric mean'&&methodName({kind:'power-mean',p:-1})==='Harmonic mean'&&methodName({kind:'topsis',p:1})==='TOPSIS closeness'&&methodName({kind:'power-mean',p:2},true)==='Power mean p=2');
+assert('parseTable honours quoted fields, doubled quotes and embedded line breaks',(()=>{
+const a=parseTable('Name\tA\n"x, y"\t1');
+const e=parseTable('\n\na,b\n"x, y",2');
+const b=parseTable('n,"a ""b"" c",3\n\nm,2,');
+const c=parseTable('a,"l1\nl2",c');
+return JSON.stringify(e)===JSON.stringify([['a','b'],['x, y','2']])&&a.length===2&&a[1][0]==='x, y'&&b.length===2&&b[0][1]==='a "b" c'&&b[1].length===3&&c.length===1&&c[0][1]==='l1\nl2';
+})());
+assert('equations cannot read or call inherited object members',(()=>{
+const f=EXPR.compile('constructor(1)',null);
+const g=EXPR.compile('toString',null);
+let threw=false;
+try{g.run({x:1});}catch(e){threw=/Unknown name/.test(e.message);}
+return!f.ok&&g.ok&&threw;
+})());
+assert('closest flip is memoized per model',(()=>{
+const m=fixture3x3(1),r=ENGINE.score(m);
+const a=ANALYSIS.closestFlip(m,r),b=ANALYSIS.closestFlip(m,r);
+return a===b&&a!==null;
+})());
+assert('workbook export uses sign-correct ceil, rounding precision and in-place step formulas',(()=>{
+const m=fixture3x3(1);
+m.criteria[0].scale={kind:'custom',params:{expr:'ceil(x - 0.5)',consts:[]}};
+m.criteria[1].scale={kind:'step',params:{breakpoints:[{at:5,v:0.2},{at:0,v:0}]}};
+m.criteria[2].scale={kind:'linear',params:{}};
+const b=XLSX_W.build(m,ENGINE.score(m));
+const t=new TextDecoder().decode(b);
+return b[0]===0x50&&b[1]===0x4b&&t.includes('-INT(-(')&&!t.includes('ROUNDUP(')&&t.includes('LOOKUP(')&&t.includes('=MIN(Data!')&&t.includes('IF(MAX(Data!');
+})());
+assert('workbook export handles redistribute weights, categorical policies and zero-weight wmin',(()=>{
+const m=fixture3x3(1);
+m.criteria[2].missing='redistribute';
+m.criteria[1].scale={kind:'categorical',params:{map:{hi:1,lo:0}}};
+m.criteria[1].missing='exclude-option';
+const t1=new TextDecoder().decode(XLSX_W.build(m,ENGINE.score(m)));
+const ok1=t1.includes('*(1-ISBLANK(Data!')&&t1.includes('IFERROR(')&&t1.includes('ISNA(MATCH(');
+const c=fixture3x3(1);
+c.aggregate={kind:'custom',p:1,tiebreak:[],expr:'wmin',consts:[]};
+c.criteria[2].weight=0;
+const t2=new TextDecoder().decode(XLSX_W.build(c,ENGINE.score(c)));
+const r=fixture3x3(1);
+r.criteria[2].missing='redistribute';
+r.aggregate={kind:'custom',p:1,tiebreak:[],expr:'wsum',consts:[]};
+const b3=XLSX_W.build(r,ENGINE.score(r));
+return ok1&&t2.includes('IF($D$2&gt;0,')&&t2.includes('=9,0,MIN(')&&b3[0]===0x50;
+})());
+assert('parseConsts reports dropped lines and reserved names',(()=>{
+const l=parseConsts('alpha: 2\nbad line\nwsum: 3\nalpha: 4',['wsum']);
+return l.length===1&&l[0].name==='alpha'&&l.dropped===3;
+})());
+assert('typing an unmapped category still stores the value',(()=>{
+const m=fixture3x3(1);
+m.criteria[0].scale={kind:'categorical',params:{map:{good:1}}};
+commitCellValue(m,0,0,'weird');
+return m.options[0].values.a==='weird';
+})());
+assert('decision record lists exclusions, readable direction, method, tie-break and gate summaries',(()=>{
+const m=deepClone(EXAMPLES.meridian);
+m.aggregate.tiebreak=['quality'];
+const md=EXPORT.decisionRecordMarkdown(m,ENGINE.score(m),{});
+return/## Excluded/.test(md)&&/(higher|lower) is better/.test(md)&&/Aggregation: Weighted sum/.test(md)&&/Exact ties are broken by/.test(md)&&/- Offers every requested service \(hard\): .*cardio/.test(md);
+})());
+assert('gateSummary reads the Meridian gates with criterion labels',EXAMPLES.meridian.gates.every(g=>gateSummary(g.when,EXAMPLES.meridian).length>3)&&/has tag/.test(gateSummary(EXAMPLES.meridian.gates[0].when,EXAMPLES.meridian)));
+assert('a gate built the way the editor builds it excludes the failing option',(()=>{
+const m=fixture3x3(1);
+m.gates=[{id:'g',label:'g',severity:'hard',penalty:10,message:'Does not meet this rule.',when:{t:'all',of:[{t:'cmp',criterion:'a',op:'>=',value:1}]}}];
+const r=ENGINE.score(m);
+return r.excluded.some(e=>e.option.id==='y')&&r.ranked.every(x=>x.option.id!=='y');
+})());
+assert('recordExtra adds the Monte Carlo sentence only for a matching result',(()=>{
+const m=fixture3x3(1),r=ENGINE.score(m),pm=STORE.ui.monteCarloResult,pa=STORE.ui.mcAssumed;
+STORE.ui.monteCarloResult={seed:7,samples:2000,byOption:{[r.winner.id]:{pRank1:0.63}},sig:analysisSig(m)};
+STORE.ui.mcAssumed=true;
+const a=recordExtra(m,r).monteCarlo;
+const o=deepClone(m);o.criteria[0].weight=40;
+const b=recordExtra(o,ENGINE.score(o)).monteCarlo;
+STORE.ui.monteCarloResult=pm;STORE.ui.mcAssumed=pa;
+return/ranks first in 63% of 2000 samples \(seed 7\) \(assumed uncertainty\)\./.test(a)&&b===null;
+})());
+assert('category points can be built from the data the way the paste flow does it',(()=>{
+const m=fixture3x3(1);
+m.options[0].values.a='gold';m.options[1].values.a='silver';m.options[2].values.a='bronze';
+const map=categoryMap(m,'a');
+m.criteria[0].scale={kind:'categorical',params:{map}};
+const r=ENGINE.score(m);
+const g=r.ranked.find(x=>x.option.id==='x').contributions.a;
+return map.gold===1&&map.silver===0.5&&map.bronze===0&&g.v===1;
+})());
+assert('the tags cell stores a de-duplicated list and tab order reaches the tags column',(()=>{
+const m=fixture3x3(1);
+commitCellValue(m,0,m.criteria.length,'a, b,,a');
+const t=m.options[0].tags;
+const n1=moveAfterCommit(m,0,2,'Tab',false),n2=moveAfterCommit(m,0,3,'Tab',false),n3=moveAfterCommit(m,1,-1,'Tab',true);
+return t.length===2&&t[0]==='a'&&t[1]==='b'&&n1.c===3&&n2.r===1&&n2.c===-1&&n3.r===0&&n3.c===3;
+})());
+assert('gate editing turns a lone leaf into an all-group and rejects non-numeric values',(()=>{
+const m=fixture3x3(1);
+const g=newGate(m);
+const e1=gateApplyEdit(m,g,'','value',0,'7');
+const ok=g.when.t==='all'&&g.when.of[0].value===7;
+const e2=gateApplyEdit(m,g,'','value',0,'abc');
+const e3=gateApplyEdit(m,g,'','t',0,'between');
+const e4=gateApplyEdit(m,g,'','lo',0,'2');
+const e5=gateApplyEdit(m,g,'','t',0,'tag');
+const e6=gateApplyEdit(m,g,'','value',0,'cardio');
+const e7=gateApplyEdit(m,g,'severity','',0,'soft');
+const e8=gateApplyEdit(m,g,'penalty','',0,'250');
+return ok&&e1===''&&e2!==''&&e3===''&&e4===''&&g.when.of[0].t==='tag'&&e5===''&&e6===''&&g.when.of[0].value==='cardio'&&e7===''&&g.severity==='soft'&&g.penalty===100;
+})());
+assert('a nested gate is read-only in the editor while a flat one is editable',!gateEditable({t:'not',of:[{t:'tag',value:'x'}]})&&!gateEditable({t:'all',of:[{t:'any',of:[{t:'tag',value:'x'}]}]})&&gateEditable({t:'tag',value:'x'})&&gateEditable({t:'any',of:[{t:'missing',criterion:'a'}]}));
+assert('the gates panel renders for every example and disables Add gate with no criteria',Object.keys(EXAMPLES).every(k=>renderGates(EXAMPLES[k]).includes('data-gateop="add"'))&&/data-gateop="add" disabled/.test(renderGates(normalizeModel({criteria:[],options:[]}))));
 const pass=results.filter(r=>r.pass).length;
 const fail=results.length-pass;
 results.forEach(r=>console.log((r.pass?'PASS ':'FAIL ')+r.name));
@@ -3151,6 +3742,7 @@ return{run};
 function commitCellValue(model,r,c,text){
 const opt=model.options[r];
 if(c===-1){opt.label=text.trim()||opt.label;return;}
+if(c===model.criteria.length){opt.tags=[...new Set(text.split(',').map(x=>x.trim()).filter(Boolean))];return;}
 const cr=model.criteria[c];
 const norm=NORMALIZERS[cr.scale.kind];
 const t=text.trim();
@@ -3165,10 +3757,11 @@ else if(/^(false|0|no)$/i.test(t))opt.values[cr.id]=false;
 else{opt.values[cr.id]=null;toast('\u201c'+t+'\u201d is not true/false \u2014 left blank.');}
 }else{
 opt.values[cr.id]=t;
+if(cr.scale.kind==='categorical'&&!Object.prototype.hasOwnProperty.call((cr.scale.params&&cr.scale.params.map)||{},t))toast('\u201c'+t+'\u201d has no points in '+cr.label+'; set it on the Criteria tab.');
 }
 }
 function moveAfterCommit(model,r,c,key,shift){
-const maxC=model.criteria.length-1;
+const maxC=model.criteria.length;
 if(key==='Enter'){
 const nr=r+1;
 return nr<model.options.length?{r:nr,c}:null;
@@ -3214,7 +3807,50 @@ else if((b=e.target.closest('#themeBtn'))){
 const html=document.documentElement;
 const next=html.dataset.theme==='dark'?'light':'dark';
 html.dataset.theme=next;
+b.textContent=next==='dark'?'Light':'Dark';
 try{localStorage.setItem('rubric.theme',next);}catch(err){}
+}
+else if((b=e.target.closest('[data-gateop]'))){
+const op=b.dataset.gateop,gid=b.dataset.gate,ci=+b.dataset.gcond;
+if(op==='delcond'){
+const g0=STORE.model.gates.find(x=>x.id===gid);
+if(g0&&gateEditable(g0.when)&&gateParts(g0.when).leaves.length<2){toast('A gate needs at least one condition. Remove the gate instead.');return;}
+}
+STORE.act('Edit gate',model=>{
+if(op==='add'){if(model.criteria.length)model.gates.push(newGate(model));return;}
+const gi=model.gates.findIndex(x=>x.id===gid);
+if(gi<0)return;
+const g=model.gates[gi];
+if(op==='del'){model.gates.splice(gi,1);return;}
+if(!gateEditable(g.when))return;
+const parts=gateParts(g.when);
+if(op==='addcond')parts.leaves.push(gateLeaf(model,'cmp'));
+else if(op==='delcond')parts.leaves.splice(ci,1);
+g.when=gateBuild(parts.mode,parts.leaves);
+});
+}
+else if((b=e.target.closest('[data-rowop]'))){
+const r=+b.dataset.r,op=b.dataset.rowop;
+STORE.act('Row: '+op,model=>{
+if(op==='up'&&r>0){const o=model.options.splice(r,1)[0];model.options.splice(r-1,0,o);}
+else if(op==='down'&&r<model.options.length-1){const o=model.options.splice(r,1)[0];model.options.splice(r+1,0,o);}
+else if(op==='dup'){const o=deepClone(model.options[r]);o.id=uid('opt');o.label=o.label+' copy';model.options.splice(r+1,0,o);}
+else if(op==='del'){const rm=model.options.splice(r,1)[0];if(rm&&model.view.pinned)model.view.pinned=model.view.pinned.filter(x=>x!==rm.id);}
+});
+}
+else if((b=e.target.closest('[data-colop]'))){
+const c=+b.dataset.c,op=b.dataset.colop;
+let rc=null;
+STORE.act('Column: '+op,model=>{
+if(op==='dup'){
+const src=model.criteria[c];const cr=deepClone(src);cr.id=uid('crit');cr.label=cr.label+' copy';cr.weight=0;cr.locked=false;
+model.criteria.splice(c+1,0,cr);
+model.options.forEach(o=>{o.values[cr.id]=o.values[src.id];});
+}else if(op==='del'){
+if(model.criteria[c])rc=removeCriterion(model,model.criteria[c].id);
+}
+});
+removalToast(rc);
 }
 else if((b=e.target.closest('.cellbox'))&&b.id!=='cellEdit'){
 const td=b.closest('td');
@@ -3232,28 +3868,6 @@ model.criteria.push({id:uid('crit'),label:'New criterion',unit:'',description:''
 scale:{kind:'linear',params:{}},weight:0,locked:false,missing:'exclude-option',uncertainty:{kind:'none',value:0}});
 });
 }
-else if((b=e.target.closest('[data-rowop]'))){
-const r=+b.dataset.r,op=b.dataset.rowop;
-STORE.act('Row: '+op,model=>{
-if(op==='up'&&r>0){const o=model.options.splice(r,1)[0];model.options.splice(r-1,0,o);}
-else if(op==='down'&&r<model.options.length-1){const o=model.options.splice(r,1)[0];model.options.splice(r+1,0,o);}
-else if(op==='dup'){const o=deepClone(model.options[r]);o.id=uid('opt');o.label=o.label+' copy';model.options.splice(r+1,0,o);}
-else if(op==='del'){model.options.splice(r,1);}
-});
-}
-else if((b=e.target.closest('[data-colop]'))){
-const c=+b.dataset.c,op=b.dataset.colop;
-STORE.act('Column: '+op,model=>{
-if(op==='dup'){
-const src=model.criteria[c];const cr=deepClone(src);cr.id=uid('crit');cr.label=cr.label+' copy';
-model.criteria.splice(c+1,0,cr);
-model.options.forEach(o=>{o.values[cr.id]=o.values[src.id];});
-}else if(op==='del'){
-const removed=model.criteria.splice(c,1)[0];
-model.options.forEach(o=>{delete o.values[removed.id];});
-}
-});
-}
 else if((b=e.target.closest('#pasteCancel'))){VIEWS.data.closeModal();}
 else if((b=e.target.closest('#pasteConfirm'))){VIEWS.data.confirmPaste();}
 else if((b=e.target.closest('[data-pf="direction"]'))){
@@ -3267,10 +3881,9 @@ STORE.act('Set direction',model=>{model.criteria.find(c=>c.id===id).direction=va
 }
 else if((b=e.target.closest('[data-delcrit]'))){
 const id=b.dataset.delcrit;
-STORE.act('Remove criterion',model=>{
-const idx=model.criteria.findIndex(c=>c.id===id);
-if(idx>=0){const removed=model.criteria.splice(idx,1)[0];model.options.forEach(o=>{delete o.values[removed.id];});}
-});
+let rc=null;
+STORE.act('Remove criterion',model=>{rc=removeCriterion(model,id);});
+removalToast(rc);
 }
 else if((b=e.target.closest('[data-copycrit]'))){
 const id=b.dataset.copycrit;
@@ -3308,6 +3921,7 @@ else if((b=e.target.closest('#applyRocBtn'))){
 STORE.act('Apply rank-order weights',model=>{
 const w=WEIGHTS.rankOrderCentroid(STORE.ui.rocOrder);
 model.criteria.forEach(c=>{if(w[c.id]!==undefined){c.weight=w[c.id];c.locked=false;}});
+rebalanceWeights(model.criteria);
 });
 toast('Rank-order weights applied');
 }
@@ -3329,12 +3943,11 @@ STORE.actUI(ui=>{ui.ahpIndex=idx>=0?idx:0;});
 }
 else if((b=e.target.closest('#applyAhpBtn'))){
 const ids=STORE.model.criteria.map(c=>c.id);
-const pairs=WEIGHTS.allPairs(ids);
-const judgments=pairs.map(p=>({i:p.i,j:p.j,ratio:WEIGHTS.sliderToRatio((STORE.ui.ahpJudgments||{})[p.i+'-'+p.j]||0)}));
-const result=WEIGHTS.pairwiseResult(ids,judgments);
+const result=WEIGHTS.pairwiseResult(ids,ahpJudgments(ids));
 if(result.CR<=0.10){
 STORE.act('Apply pairwise weights',model=>{
 model.criteria.forEach(c=>{if(result.weights[c.id]!==undefined){c.weight=result.weights[c.id];c.locked=false;}});
+rebalanceWeights(model.criteria);
 });
 toast('Pairwise weights applied');
 }
@@ -3354,19 +3967,12 @@ else if((b=e.target.closest('[data-applypreset]'))){
 const i=+b.dataset.applypreset;
 STORE.act('Apply preset',model=>{
 const p=model.presets[i];
-if(p)model.criteria.forEach(c=>{if(p.weights[c.id]!==undefined){c.weight=p.weights[c.id];c.locked=false;}});
+if(p){model.criteria.forEach(c=>{if(p.weights[c.id]!==undefined){c.weight=p.weights[c.id];c.locked=false;}});rebalanceWeights(model.criteria);}
 });
 }
 else if((b=e.target.closest('[data-delpreset]'))){
 const i=+b.dataset.delpreset;
 STORE.act('Delete preset',model=>{model.presets.splice(i,1);});
-}
-else if((b=e.target.closest('[data-toggleexpand]'))){
-const id=b.dataset.toggleexpand;
-STORE.actUI(ui=>{
-if(!ui.rankExpanded)ui.rankExpanded={};
-ui.rankExpanded[id]=!ui.rankExpanded[id];
-});
 }
 else if((b=e.target.closest('[data-pin]'))){
 const id=b.dataset.pin;
@@ -3380,20 +3986,26 @@ if(model.view.pinned.length>2)model.view.pinned.shift();
 }
 });
 }
+else if((b=e.target.closest('[data-toggleexpand]'))){
+const id=b.dataset.toggleexpand;
+STORE.actUI(ui=>{
+if(!ui.rankExpanded)ui.rankExpanded={};
+ui.rankExpanded[id]=!ui.rankExpanded[id];
+});
+}
 else if((b=e.target.closest('#runRobustnessBtn'))){
-STORE.actUI(ui=>{ui.robustnessResult=ANALYSIS.weightAgnosticRobustness(STORE.model);});
+STORE.actUI(ui=>{ui.robustnessResult={...ANALYSIS.weightAgnosticRobustness(STORE.model),sig:analysisSig(STORE.model)};});
 }
 else if((b=e.target.closest('#assumeUncBtn'))){
 STORE.act('Assume \u00b15% uncertainty',model=>{model.criteria.forEach(c=>{c.uncertainty={kind:'pct',value:5};});});
 STORE.actUI(ui=>{ui.mcAssumed=true;});
 }
 else if((b=e.target.closest('#runMcBtn'))){
-STORE.actUI(ui=>{ui.monteCarloResult=ANALYSIS.monteCarlo(STORE.model);});
+STORE.actUI(ui=>{const r=ANALYSIS.monteCarlo(STORE.model);ui.monteCarloResult=r?{...r,sig:analysisSig(STORE.model)}:null;});
 }
 else if((b=e.target.closest('#copyRecordBtn'))){
 const model=STORE.model,result=ENGINE.score(model);
-const cf=ANALYSIS.closestFlip(model,result),robustness=STORE.ui.robustnessResult;
-const md=EXPORT.decisionRecordMarkdown(model,result,{closestFlip:ANALYSIS.closestFlipSentence(cf,model),robustness:robustness?ANALYSIS.robustnessSentence(robustness.shares,model):null});
+const md=EXPORT.decisionRecordMarkdown(model,result,recordExtra(model,result));
 copyText(md).then(()=>toast('Decision record copied')).catch(()=>toast('Copy failed.'));
 }
 else if((b=e.target.closest('#printRecordBtn'))){
@@ -3418,10 +4030,9 @@ if(!file)return;
 const reader=new FileReader();
 reader.onload=()=>{
 try{
-const parsed=JSON.parse(reader.result);
-if(!parsed||!Array.isArray(parsed.criteria)||!Array.isArray(parsed.options))throw new Error('bad shape');
+const parsed=normalizeModel(JSON.parse(reader.result));
 STORE.loadModel(parsed);
-toast('Model imported \u2014 '+(parsed.meta&&parsed.meta.name?parsed.meta.name:'untitled'));
+toast('Model imported \u2014 '+parsed.meta.name);
 }catch(err){toast('Could not read that file as a model.');}
 };
 reader.readAsText(file);
@@ -3451,7 +4062,9 @@ return;
 const aggField=e.target.closest('[data-agg]');
 if(aggField){
 const f=aggField.dataset.agg,val=aggField.value;
+if(f==='kind'&&val.indexOf('p:')===0)return;
 if(f==='expr'&&(STORE.model.aggregate.expr||'')===val)return;
+let dropped=0;
 STORE.act('Edit scoring method',model=>{
 const a=model.aggregate;
 if(f==='kind'){
@@ -3459,16 +4072,40 @@ if(val==='custom'){a.kind='custom';a.expr=a.expr||'0.7*wsum + 0.3*wmin';a.consts
 else if(val==='topsis'){a.kind='topsis';}
 else{a.kind='power-mean';a.p=Number(val);}
 }else if(f==='expr'){a.expr=val;}
-else if(f==='consts'){a.consts=parseConsts(val);}
+else if(f==='tiebreak'){a.tiebreak=val?[val]:[];}
+else if(f==='consts'){const own=(a.consts||[]).map(q=>q.name);const l=parseConsts(val,aggNames(model).filter(n=>!own.includes(n)));dropped=l.dropped;a.consts=[...l];}
 });
+ignoredToast(dropped);
+return;
+}
+const gateCtl=e.target.closest('[data-gate][data-gfield],[data-gate][data-gcf]');
+if(gateCtl){
+const gid=gateCtl.dataset.gate;
+const draft=deepClone(STORE.model);
+const dg=draft.gates.find(x=>x.id===gid);
+if(!dg)return;
+const why=gateApplyEdit(draft,dg,gateCtl.dataset.gfield,gateCtl.dataset.gcf,+gateCtl.dataset.gcond,gateCtl.value);
+if(why){toast(why);renderAll();upgradeControls();return;}
+STORE.act('Edit gate',model=>{const i=model.gates.findIndex(x=>x.id===gid);if(i>=0)model.gates[i]=dg;});
 return;
 }
 const critField=e.target.closest('[data-crit][data-field]');
 if(critField){
 const id=critField.dataset.crit,field=critField.dataset.field;
+let badValues=0,badNeed='';
 STORE.act('Edit '+field,model=>{
 const cr=model.criteria.find(c=>c.id===id);
-if(field==='normalizer'){cr.scale={kind:critField.value,params:defaultParams(critField.value)};}
+if(field==='normalizer'){
+const kind=critField.value;
+cr.scale={kind,params:defaultParams(kind)};
+const vals=materialize(model).options.map(o=>o.values[cr.id]).filter(v=>!isMissingVal(v));
+if(kind==='categorical')cr.scale.params.map=categoryMap(model,cr.id);
+const need=NORMALIZERS[kind].needs;
+if(need==='numeric'||need==='boolean'){
+badValues=vals.filter(v=>typeof v!==(need==='numeric'?'number':'boolean')).length;
+badNeed=need;
+}
+}
 else if(field==='missing'){cr.missing=critField.value;}
 else if(field==='uncKind'){cr.uncertainty.kind=critField.value;}
 else if(field==='uncValue'){cr.uncertainty.value=Number(critField.value)||0;}
@@ -3477,12 +4114,18 @@ else if(field==='unit'){cr.unit=critField.value;}
 else if(field==='description'){cr.description=critField.value;}
 else if(field==='formula'){const v=critField.value.trim();if(v)cr.formula=v;else delete cr.formula;}
 });
+if(badValues)toast(badValues+' value'+(badValues===1?'':'s')+' '+(badValues===1?'is':'are')+' not '+(badNeed==='numeric'?'numbers':'true/false')+' and will count as missing.',4000);
 return;
 }
 const paramField=e.target.closest('[data-crit][data-param]');
 if(paramField){
 const id=paramField.dataset.crit,key=paramField.dataset.param;
 if(key==='expr'){const cur=STORE.model.criteria.find(c=>c.id===id);if(cur&&(cur.scale.params.expr||'')===paramField.value)return;}
+if(!['breakpoints','map','expr','consts'].includes(key)){
+const why=paramProblem(STORE.model.criteria.find(c=>c.id===id),key,paramField.value);
+if(why){toast(why);renderAll();upgradeControls();return;}
+}
+let dropped=0;
 STORE.act('Edit parameter',model=>{
 const cr=model.criteria.find(c=>c.id===id);
 if(!cr.scale.params)cr.scale.params={};
@@ -3500,11 +4143,12 @@ cr.scale.params.map=map;
 }else if(key==='expr'){
 cr.scale.params.expr=paramField.value;
 }else if(key==='consts'){
-cr.scale.params.consts=parseConsts(paramField.value);
+const l=parseConsts(paramField.value);dropped=l.dropped;cr.scale.params.consts=[...l];
 }else{
 cr.scale.params[key]=Number(paramField.value);
 }
 });
+ignoredToast(dropped);
 return;
 }
 const directCtl=e.target.closest('[data-directid],[data-directnum]');
@@ -3546,7 +4190,7 @@ const box=e.target.closest&&e.target.closest('.cellbox');
 if(box&&box.id!=='cellEdit'){
 const td=box.closest('td');
 if(td&&td.dataset.r!==undefined&&/^Arrow(Up|Down|Left|Right)$/.test(e.key)){
-const r=+td.dataset.r,c=+td.dataset.c,maxC=STORE.model.criteria.length-1;
+const r=+td.dataset.r,c=+td.dataset.c,maxC=STORE.model.criteria.length;
 let nr=r,nc=c;
 if(e.key==='ArrowUp')nr=Math.max(0,r-1);
 else if(e.key==='ArrowDown')nr=Math.min(STORE.model.options.length-1,r+1);
@@ -3569,7 +4213,8 @@ if((e.ctrlKey||e.metaKey)&&!typing){
 if(e.key.toLowerCase()==='z'&&!e.shiftKey){e.preventDefault();STORE.undo();return;}
 if((e.key.toLowerCase()==='z'&&e.shiftKey)||e.key.toLowerCase()==='y'){e.preventDefault();STORE.redo();return;}
 }
-if(!typing&&/^[1-6]$/.test(e.key)){
+const modalRoot=$('#modalRoot');
+if(!typing&&/^[1-6]$/.test(e.key)&&!(modalRoot&&modalRoot.children.length)){
 const views=['data','criteria','weights','rank','stress','record'];
 STORE.actUI(ui=>{ui.activeView=views[+e.key-1];});
 }
@@ -3577,8 +4222,12 @@ STORE.actUI(ui=>{ui.activeView=views[+e.key-1];});
 
 document.addEventListener('paste',e=>{
 if(!e.target.closest||!e.target.closest('#gridPasteTarget'))return;
-e.preventDefault();
 const text=(e.clipboardData||window.clipboardData).getData('text/plain');
+if(e.target.closest('#cellEdit')){
+if(!/[\t\n]/.test(text.trim()))return;
+STORE.actUI(ui=>{ui.editingCell=null;});
+}
+e.preventDefault();
 VIEWS.data.handlePaste(text);
 });
 
@@ -3588,11 +4237,11 @@ e.target.dataset.dirty='1';
 if(e.target.matches('[data-param="expr"],[data-agg="expr"],[data-field="formula"]'))updateEqMsg(e.target);
 }
 if(e.target.id==='ahpSlider'){
-const i=+e.target.dataset.i,j=+e.target.dataset.j,s=+e.target.value;
+const s=+e.target.value;
 if(!STORE.ui.ahpJudgments)STORE.ui.ahpJudgments={};
-STORE.ui.ahpJudgments[i+'-'+j]=s;
+STORE.ui.ahpJudgments[e.target.dataset.key]=s;
 const lbl=$('#ahpSliderLabel');
-if(lbl)lbl.textContent=ahpSliderText(s);
+if(lbl)lbl.textContent=ahpSliderText(s,e.target.dataset.a,e.target.dataset.b);
 }
 });
 }
@@ -3789,6 +4438,8 @@ download((m.meta.id||'model')+'.xlsx',XLSX_W.build(m,ENGINE.score(m)),'applicati
 
 function init(){
 try{const th=localStorage.getItem('rubric.theme');if(th)document.documentElement.dataset.theme=th;}catch(e){}
+const themeBtn=document.getElementById('themeBtn');
+if(themeBtn)themeBtn.textContent=document.documentElement.dataset.theme==='dark'?'Light':'Dark';
 populateExampleSelect();
 STORE.subscribe(()=>{renderAll();upgradeControls();});
 wireEvents();
