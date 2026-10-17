@@ -385,6 +385,67 @@ nav.tabs::-webkit-scrollbar{display:none}
 nav.tabs button{flex:1;white-space:nowrap}
 }
 @media (max-width:520px){.dd-hdr .ddbtn{min-width:120px}}
+:root{--t-fast:110ms;--t-med:180ms;--ease-out:cubic-bezier(.22,1,.36,1);--ease-in:cubic-bezier(.4,0,1,1)}
+label.flabel{display:block;font-size:11px;color:var(--ink-mu);font-weight:600;margin:6px 0 3px;letter-spacing:.01em}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,168px),1fr));gap:10px;align-items:end;min-width:0}
+.fcell{display:flex;flex-direction:column;min-width:0}
+.fcell.wide{grid-column:1/-1}
+.fgrid.two{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}
+.fcell>label.flabel{margin:0 0 4px}
+.fcell .dd,.fcell .numf,.fcell input.field,.fcell select.field,.fcell textarea.field{margin:0;width:100%}
+.fcell .dd-field .ddbtn{margin:0}
+.fcell input.field,.fcell .ddbtn,.fcell .numf{height:35px}
+.fcell textarea.field{height:auto}
+.condrow~.btn{margin-top:10px}
+.condrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:var(--r1);background:var(--paper-2)}
+@media (max-width:520px){.condrow{grid-template-columns:minmax(0,1fr)}}
+.ddbtn{min-width:min(100%,96px)}
+.dd{max-width:100%}
+.ddbtn span{flex:1;min-width:0}
+.numf{min-width:96px}
+.paramrow{flex-wrap:wrap}
+.paramrow>*{min-width:min(100%,132px)}
+.directrow{grid-template-columns:140px minmax(0,1fr) 112px 76px}
+@media (max-width:760px){.directrow{grid-template-columns:minmax(0,1fr) 112px;row-gap:6px}.directrow>:nth-child(4){grid-column:2}}
+.btn,.iconbtn,select.hdr,.pinbtn,.ddbtn,.numf,.numf button,.eqchip,.copyglyph,.dirtoggle button,nav.tabs button,.methodtabs button,input.field,textarea.field,.ccard,.rankrow,table.grid button.mini{transition-duration:var(--t-fast);transition-timing-function:var(--ease-out)}
+.btn:active:not(:disabled),.iconbtn:active:not(:disabled),.pinbtn:active,.eqchip:active,.dirtoggle button:active,.methodtabs button:active,nav.tabs button:active{transform:scale(.97)}
+nav.tabs{position:relative}
+nav.tabs::before{content:"";position:absolute;top:3px;bottom:3px;left:0;width:var(--iw,0px);transform:translateX(var(--ix,0px));border-radius:999px;background:var(--paper);box-shadow:0 1px 2px rgba(50,35,90,.14),0 5px 12px -5px rgba(50,35,90,.25);pointer-events:none}
+nav.tabs.ready::before{transition:transform var(--t-med) var(--ease-out),width var(--t-med) var(--ease-out)}
+[data-theme="dark"] nav.tabs::before{background:rgba(255,255,255,.1)}
+nav.tabs button{position:relative;z-index:1}
+nav.tabs button.on,[data-theme="dark"] nav.tabs button.on{background:transparent;box-shadow:none}
+.view.enter>*{animation:vin var(--t-med) var(--ease-out) both;animation-delay:calc(var(--i,0)*24ms)}
+@keyframes vin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.modalbg{animation-duration:.14s}
+.modal{animation-duration:.2s;animation-timing-function:var(--ease-out)}
+.modalbg.leaving{animation:rb-fade-out 110ms var(--ease-in) forwards;pointer-events:none}
+.modalbg.leaving .modal{animation:rb-pop-out 110ms var(--ease-in) forwards}
+@keyframes rb-fade-out{to{opacity:0}}
+@keyframes rb-pop-out{to{opacity:0;transform:translateY(6px) scale(.985)}}
+.toast{animation-duration:.18s;animation-timing-function:var(--ease-out)}
+.toast.out{animation:rb-toast-out 130ms var(--ease-in) forwards}
+@keyframes rb-toast-out{to{opacity:0;transform:translate(-50%,6px)}}
+.ddmenu{animation:ddin 120ms var(--ease-out)}
+.ddmenu.out{animation:ddout 90ms var(--ease-in) forwards;pointer-events:none}
+@keyframes ddin{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes ddout{to{opacity:0;transform:translateY(-3px) scale(.98)}}
+.step{padding:18px 0;border-top:1px solid var(--line)}
+.step:first-child{border-top:none;padding-top:4px}
+.stephead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.stephead h3{margin:0;font-size:16px;font-weight:500;letter-spacing:-.01em}
+.stepn{width:24px;height:24px;flex:none;border-radius:50%;display:grid;place-items:center;font:600 11.5px var(--mono);background:var(--paper-2);color:var(--ink-mu);box-shadow:inset 0 0 0 1px var(--line-2);transition:background var(--t-med) var(--ease-out),color var(--t-med) var(--ease-out)}
+.stepn.done{background:var(--accent);color:#fff;box-shadow:none}
+.stepstat{margin-left:auto;font-size:11.5px;color:var(--ink-fa)}
+.critrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;margin-bottom:8px;padding:12px;border:1px solid var(--line);border-radius:var(--r1);background:var(--paper-2)}
+@media (max-width:520px){.critrow{grid-template-columns:minmax(0,1fr)}}
+.bgrid td.bc{padding:6px 8px;min-width:132px}
+.bgrid td.bc input.field{text-align:right;font-family:var(--mono)}
+.bgrid td.bc .dd-field .ddbtn{margin:0}
+.bgrid th.lbl,.bgrid td.lbl{padding:8px 12px;font-family:var(--sans);font-weight:600}
+.bnote{margin:8px 0 0;font-size:11.5px;color:var(--ink-fa)}
+.weightbar span,.contribbar span{transition:width var(--t-med) var(--ease-out)}
+.rankrow .rt,.rankrow .rn{transition:color var(--t-fast)}
 </style>
 </head>
 <body>
@@ -393,6 +454,7 @@ nav.tabs button{flex:1;white-space:nowrap}
 <header>
 <div class="brand"><svg aria-hidden="true" viewBox="0 0 32 32"><defs><linearGradient id="rbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8f76c6"/><stop offset="1" stop-color="#4b3a76"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#rbg)"/><rect x="6.5" y="10.5" width="4.6" height="15" rx="1.7" fill="#faf8fc"/><rect x="13.7" y="15" width="4.6" height="10.5" rx="1.7" fill="#faf8fc" fill-opacity=".78"/><rect x="20.9" y="19.5" width="4.6" height="6" rx="1.7" fill="#faf8fc" fill-opacity=".54"/><circle cx="8.8" cy="6.3" r="1.9" fill="#f1c88e"/></svg><b>Rubric</b><span>weighted ranking workbench</span></div>
 <nav class="tabs" id="tabs">
+<button data-view="build">Build</button>
 <button data-view="data" class="on">Data</button>
 <button data-view="criteria">Criteria</button>
 <button data-view="weights">Weights</button>
@@ -400,7 +462,7 @@ nav.tabs button{flex:1;white-space:nowrap}
 <button data-view="stress">Stress</button>
 <button data-view="record">Record</button>
 </nav>
-<select class="hdr" id="exampleSel">
+<select class="hdr" id="exampleSel" aria-label="Load example">
 <option value="">Load example…</option>
 </select>
 <button class="iconbtn" id="undoBtn" title="Undo">Undo</button>
@@ -411,6 +473,7 @@ nav.tabs button{flex:1;white-space:nowrap}
 
 <main id="main">
 <div id="banner"></div>
+<section class="view" id="v-build" hidden></section>
 <section class="view" id="v-data" hidden></section>
 <section class="view" id="v-criteria" hidden></section>
 <section class="view" id="v-weights" hidden></section>
@@ -456,15 +519,26 @@ ta.remove();
 if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text).catch(fallback);
 return fallback();
 }
-let _toastTimer=0;
+let _toastTimer=0,_toastHide=0;
 function toast(msg,ms=2000){
 if(typeof document==='undefined')return;
 const el=$('#toast');
 if(!el)return;
+clearTimeout(_toastTimer);
+clearTimeout(_toastHide);
+el.classList.remove('out');
 el.textContent=msg;
 el.hidden=false;
-clearTimeout(_toastTimer);
-_toastTimer=setTimeout(()=>{el.hidden=true},ms);
+_toastTimer=setTimeout(()=>{
+el.classList.add('out');
+_toastHide=setTimeout(()=>{el.hidden=true;el.classList.remove('out');},140);
+},ms);
+}
+function dismissModal(after){
+const root=document.getElementById('modalRoot'),bg=root&&root.querySelector('.modalbg');
+if(!bg){if(root)root.innerHTML='';if(after)after();return;}
+bg.classList.add('leaving');
+setTimeout(()=>{if(root.contains(bg)&&bg.classList.contains('leaving'))root.innerHTML='';if(after)after();},120);
 }
 
 
@@ -1144,7 +1218,7 @@ const build=()=>{
 const e=(lower&&!shape.noDir)?'1 - ('+shape.e+')':shape.e;
 return{e,c:shape.p.map(k=>({name:k,value:Number(vals[k])}))};
 };
-const close=()=>{root.innerHTML='';root.onclick=root.onchange=root.oninput=root.onkeydown=root.onmousedown=null;};
+const close=()=>{root.onclick=root.onchange=root.oninput=root.onkeydown=root.onmousedown=null;dismissModal();};
 const draw=()=>{
 const{e,c}=build();
 const ok=c.every(q=>Number.isFinite(q.value));
@@ -2402,7 +2476,7 @@ $('#modalRoot').innerHTML=`<div class="modalbg" id="pasteModalBg"><div class="mo
 </div></div>`;
 upgradeControls();
 },
-closeModal(){$('#modalRoot').innerHTML='';pendingPaste=null;},
+closeModal(){pendingPaste=null;dismissModal();},
 confirmPaste(){
 const{header,body,detect,tagsCol}=pendingPaste;
 STORE.act('Paste '+body.length+'\u00d7'+detect.length+' block',model=>{
@@ -2534,7 +2608,7 @@ return'';
 }).join('');
 return`<div class="ccard" data-critcard="${cr.id}">
 <button class="copyglyph" data-copycrit="${cr.id}" title="Copy formula" aria-label="Copy formula for ${esc(cr.label)}">\u2398</button>
-<h3><input class="field" style="font-family:var(--serif);font-size:15px;font-weight:600;border:none;background:none;padding:2px 0;margin:0" data-crit="${cr.id}" data-field="label" value="${esc(cr.label)}"></h3>
+<h3><input class="field" style="font-family:var(--serif);font-size:15px;font-weight:600;border:none;background:none;padding:2px 0;margin:0" data-crit="${cr.id}" data-field="label" aria-label="Criterion name" value="${esc(cr.label)}"></h3>
 <span class="badge ${relative?'rel':'abs'}">${relative?'Relative':'Absolute'}</span>
 <label class="flabel">Unit</label><input class="field" data-crit="${cr.id}" data-field="unit" value="${esc(cr.unit||'')}">
 <label class="flabel">Description</label><input class="field" data-crit="${cr.id}" data-field="description" value="${esc(cr.description||'')}">
@@ -2560,14 +2634,16 @@ ${renderCurvePlot(cr,stats)}
 <option value="best"${cr.missing==='best'?' selected':''}>Score as best</option>
 <option value="redistribute"${cr.missing==='redistribute'?' selected':''}>Redistribute remaining weight</option>
 </select>
-<label class="flabel">Uncertainty</label>
-<div class="paramrow">
-<select class="field" data-crit="${cr.id}" data-field="uncKind">
+<div class="fgrid two" style="margin:6px 0 8px">
+<div class="fcell"><label class="flabel" for="unc-${cr.id}-k">Uncertainty</label>
+<select class="field" id="unc-${cr.id}-k" data-crit="${cr.id}" data-field="uncKind">
 <option value="none"${cr.uncertainty.kind==='none'?' selected':''}>None</option>
 <option value="abs"${cr.uncertainty.kind==='abs'?' selected':''}>\u00b1 absolute</option>
 <option value="pct"${cr.uncertainty.kind==='pct'?' selected':''}>\u00b1 % of column range</option>
-</select>
-<input class="field" type="number" step="any" data-crit="${cr.id}" data-field="uncValue" value="${cr.uncertainty.value}"${cr.uncertainty.kind==='none'?' disabled':''}>
+</select></div>
+<div class="fcell"><label class="flabel" for="unc-${cr.id}-v">Amount</label>
+<input class="field" id="unc-${cr.id}-v" type="number" step="any" data-crit="${cr.id}" data-field="uncValue" value="${cr.uncertainty.value}"${cr.uncertainty.kind==='none'?' disabled':''}>
+</div>
 </div>
 <div class="weightreadout"><span>Weight</span><b>${cr.weight} pts \u00b7 ${share.toFixed(1)}%</b></div>
 <button class="btn ghost" style="margin-top:10px" data-delcrit="${cr.id}">Remove criterion</button>
@@ -2627,15 +2703,26 @@ return'';
 function gateOpts(list,sel){return list.map(o=>'<option value="'+esc(o[0])+'"'+(o[0]===sel?' selected':'')+'>'+esc(o[1])+'</option>').join('');}
 function gateCritOpts(model,sel){return model.criteria.map(c=>'<option value="'+esc(c.id)+'"'+(c.id===sel?' selected':'')+'>'+esc(c.label)+'</option>').join('')+(model.criteria.some(c=>c.id===sel)?'':'<option value="'+esc(sel)+'" selected>'+esc(sel)+' (not found)</option>');}
 function gateLit(v){return v===undefined||v===null?'':String(v);}
+function gateCell(id,label,ctl,wide){
+return'<div class="fcell'+(wide?' wide':'')+'"><label class="flabel" for="'+id+'">'+label+'</label>'+ctl+'</div>';
+}
 function gateCondRow(model,g,leaf,i){
-const at='data-gate="'+esc(g.id)+'" data-gcond="'+i+'"';
-let h='<div class="paramrow"><select class="field" '+at+' data-gcf="t">'+gateOpts([['cmp','Compare'],['between','Between'],['in','One of'],['tag','Has tag'],['missing','Is missing']],leaf.t)+'</select>';
-if(leaf.t!=='tag')h+='<select class="field" '+at+' data-gcf="criterion">'+gateCritOpts(model,leaf.criterion)+'</select>';
-if(leaf.t==='cmp')h+='<select class="field" '+at+' data-gcf="op">'+gateOpts(['<','<=','>','>=','==','!='].map(o=>[o,o]),leaf.op)+'</select><input class="field" '+at+' data-gcf="value" value="'+esc(gateLit(leaf.value))+'">';
-if(leaf.t==='between')h+='<input class="field" '+at+' data-gcf="lo" value="'+esc(gateLit(leaf.lo))+'"><input class="field" '+at+' data-gcf="hi" value="'+esc(gateLit(leaf.hi))+'">';
-if(leaf.t==='in')h+='<input class="field" '+at+' data-gcf="values" placeholder="a, b, c" value="'+esc((leaf.values||[]).map(gateLit).join(', '))+'">';
-if(leaf.t==='tag')h+='<input class="field" '+at+' data-gcf="value" placeholder="tag name" value="'+esc(gateLit(leaf.value))+'">';
-return h+'<button class="mini" type="button" data-gateop="delcond" data-gate="'+esc(g.id)+'" data-gcond="'+i+'" title="Remove condition" aria-label="Remove condition">\u2715</button></div>';
+const at='data-gate="'+esc(g.id)+'" data-gcond="'+i+'"',pre='gc-'+esc(g.id)+'-'+i+'-';
+const sel=(f,opts)=>'<select class="field" id="'+pre+f+'" '+at+' data-gcf="'+f+'">'+opts+'</select>';
+const inp=(f,val,ph)=>'<input class="field" id="'+pre+f+'" '+at+' data-gcf="'+f+'"'+(ph?' placeholder="'+ph+'"':'')+' value="'+esc(val)+'">';
+let c=gateCell(pre+'t','Test',sel('t',gateOpts([['cmp','Compare'],['between','Between'],['in','One of'],['tag','Has tag'],['missing','Is missing']],leaf.t)));
+if(leaf.t!=='tag')c+=gateCell(pre+'criterion','Criterion',sel('criterion',gateCritOpts(model,leaf.criterion)));
+if(leaf.t==='cmp'){
+c+=gateCell(pre+'op','Operator',sel('op',gateOpts([['<','< less than'],['<=','<= at most'],['>','> greater than'],['>=','>= at least'],['==','== equal to'],['!=','!= not equal to']],leaf.op)));
+c+=gateCell(pre+'value','Value',inp('value',gateLit(leaf.value)));
+}
+if(leaf.t==='between'){
+c+=gateCell(pre+'lo','From',inp('lo',gateLit(leaf.lo)));
+c+=gateCell(pre+'hi','To',inp('hi',gateLit(leaf.hi)));
+}
+if(leaf.t==='in')c+=gateCell(pre+'values','Values, comma separated',inp('values',(leaf.values||[]).map(gateLit).join(', '),'a, b, c'),true);
+if(leaf.t==='tag')c+=gateCell(pre+'value','Tag name',inp('value',gateLit(leaf.value),'tag name'));
+return'<div class="condrow"><div class="fgrid">'+c+'</div><button class="btn ghost" type="button" data-gateop="delcond" data-gate="'+esc(g.id)+'" data-gcond="'+i+'" aria-label="Remove condition '+(i+1)+'">Remove</button></div>';
 }
 function renderGates(model){
 const blocks=model.gates.map(g=>{
@@ -2732,8 +2819,8 @@ renderDirect(model){
 if(!model.criteria.length)return'<p class="viewsub">No criteria yet.</p>';
 const rows=model.criteria.map(c=>`<div class="directrow">
 <span>${esc(c.label)}</span>
-<input type="range" min="0" max="100" value="${c.weight}" data-directid="${c.id}" ${c.locked?'disabled':''}>
-<input type="number" min="0" max="100" value="${c.weight}" data-directnum="${c.id}" ${c.locked?'disabled':''}>
+<input type="range" min="0" max="100" value="${c.weight}" data-directid="${c.id}" aria-label="${esc(c.label)} weight slider" ${c.locked?'disabled':''}>
+<input type="number" min="0" max="100" value="${c.weight}" data-directnum="${c.id}" aria-label="${esc(c.label)} weight" ${c.locked?'disabled':''}>
 <button class="iconbtn" data-locktoggle="${c.id}">${c.locked?'Locked':'Lock'}</button>
 </div>`).join('');
 return`<p class="viewsub">Drag a slider or type a value. Unlocked weights rescale together so the total stays 100.</p>${rows}`;
@@ -2779,7 +2866,7 @@ const s=STORE.ui.ahpJudgments[key]!==undefined?STORE.ui.ahpJudgments[key]:0;
 return`<p class="viewsub">Pair ${idx+1} of ${pairs.length}. Move the slider toward whichever matters more, and by how much.</p>
 <div class="ahppair">
 <div class="pairnames"><span>${esc(crA.label)}</span><span>${esc(crB.label)}</span></div>
-<input type="range" min="-8" max="8" step="1" value="${s}" id="ahpSlider" data-key="${esc(key)}" data-a="${esc(crA.label)}" data-b="${esc(crB.label)}">
+<input type="range" min="-8" max="8" step="1" value="${s}" id="ahpSlider" aria-label="Relative importance of ${esc(crA.label)} and ${esc(crB.label)}" data-key="${esc(key)}" data-a="${esc(crA.label)}" data-b="${esc(crB.label)}">
 <p class="viewsub" id="ahpSliderLabel">${esc(ahpSliderText(s,crA.label,crB.label))}</p>
 </div>
 <div class="ahpnav">
@@ -3774,22 +3861,376 @@ if(c>-1)return{r,c:c-1};
 return(r-1>=0)?{r:r-1,c:maxC}:null;
 }
 
+function blankModel(){
+const d=new Date().toISOString().slice(0,10);
+return{schema:1,meta:{id:'untitled',name:'Untitled decision',notes:'',created:d,updated:d,source:'user'},criteria:[],options:[],gates:[],aggregate:{kind:'power-mean',p:1,tiebreak:[]},presets:[],view:{sort:'score',pinned:[],seed:1}};
+}
+function newCriterion(n){
+return{id:uid('crit'),label:'Criterion '+n,unit:'',description:'',direction:'max',scale:{kind:'linear',params:defaultParams('linear')},weight:0,locked:false,missing:'exclude-option',uncertainty:{kind:'none',value:0}};
+}
+function critType(cr){
+const n=NORMALIZERS[cr.scale.kind];
+return n&&n.needs==='categorical'?'rating':n&&n.needs==='boolean'?'yesno':'number';
+}
+function ratingList(cr){return Object.keys((cr.scale.params&&cr.scale.params.map)||{});}
+function ratingMap(names){
+const n=names.length,m={};
+names.forEach((x,i)=>{m[x]=n>1?Math.round((1-i/(n-1))*100)/100:1;});
+return m;
+}
+function parseList(text,sep){
+const seen=new Set(),out=[];
+String(text).split(sep).forEach(x=>{const t=x.trim(),k=t.toLowerCase();if(t&&!seen.has(k)){seen.add(k);out.push(t);}});
+return out;
+}
+function weightsEqual(cs){return!cs.length||cs.every(c=>Math.abs(c.weight-cs[0].weight)<0.02);}
+function equalizeWeights(cs){
+const n=cs.length;
+if(!n)return;
+const base=Math.floor(10000/n)/100;
+cs.forEach(c=>{c.weight=base;c.locked=false;});
+cs[0].weight=Math.round((cs[0].weight+(100-base*n))*100)/100;
+}
+function bCell(id,label,ctl,wide){
+return'<div class="fcell'+(wide?' wide':'')+'"><label class="flabel" for="'+id+'">'+label+'</label>'+ctl+'</div>';
+}
+function bStep(n,title,done,stat){
+return'<div class="stephead"><span class="stepn'+(done?' done':'')+'">'+(done?'\u2713':n)+'</span><h3>'+title+'</h3><span class="stepstat">'+esc(stat)+'</span></div>';
+}
+function bCritRow(cr,i){
+const pre='bc-'+cr.id+'-',t=critType(cr),at='data-bk="'+esc(cr.id)+'"';
+let c=bCell(pre+'label','Name','<input class="field" id="'+pre+'label" '+at+' data-bc="label" value="'+esc(cr.label)+'">');
+c+=bCell(pre+'type','Type','<select class="field" id="'+pre+'type" '+at+' data-bc="type">'+gateOpts([['number','Number'],['rating','Rating'],['yesno','Yes / No']],t)+'</select>');
+if(t==='number'){
+c+=bCell(pre+'unit','Unit','<input class="field" id="'+pre+'unit" '+at+' data-bc="unit" value="'+esc(cr.unit)+'">');
+c+=bCell(pre+'direction','Better when','<select class="field" id="'+pre+'direction" '+at+' data-bc="direction">'+gateOpts([['max','Higher'],['min','Lower']],cr.direction)+'</select>');
+}
+if(t==='rating')c+=bCell(pre+'ratings','Ratings, best first, comma separated','<input class="field" id="'+pre+'ratings" '+at+' data-bc="ratings" value="'+esc(ratingList(cr).join(', '))+'">',true);
+return'<div class="critrow"><div class="fgrid">'+c+'</div><button class="btn ghost" type="button" data-bop="delcrit" '+at+' aria-label="Remove '+esc(cr.label)+'">Remove</button></div>';
+}
+function bValueCell(model,opt,cr){
+const v=opt.values[cr.id],t=critType(cr),has=v!==null&&v!==undefined&&v!=='';
+const name=esc(opt.label+' \u2014 '+cr.label),at='data-bv="'+esc(opt.id)+'" data-bk="'+esc(cr.id)+'"';
+if(t==='number')return'<td class="bc"><input class="field" '+at+' aria-label="'+name+'" inputmode="decimal" value="'+(has?esc(String(v)):'')+'"></td>';
+let opts;
+if(t==='yesno')opts=[['','\u2014'],['yes','Yes'],['no','No']];
+else{
+const list=ratingList(cr);
+if(has&&!list.includes(String(v)))list.push(String(v));
+opts=[['','\u2014'],...list.map(x=>[x,x])];
+}
+const cur=!has?'':t==='yesno'?(v===true?'yes':'no'):String(v);
+return'<td class="bc"><select class="field" '+at+' aria-label="'+name+'">'+gateOpts(opts,cur)+'</select></td>';
+}
+VIEWS.build={
+render(){
+const model=STORE.model;
+const nO=model.options.length,nC=model.criteria.length;
+let have=0;
+model.options.forEach(o=>model.criteria.forEach(c=>{const v=o.values[c.id];if(v!==null&&v!==undefined&&v!=='')have++;}));
+const total=nO*nC,ready=nO>=2&&nC>=1;
+const named=model.meta.name.trim()!==''&&model.meta.name!=='Untitled decision';
+const labels=model.options.map(o=>o.label).join('\n');
+const s1='<div class="step">'+bStep(1,'Decision',named,'')+bCell('bName','Name','<input class="field" id="bName" data-bf="name" value="'+esc(model.meta.name)+'">')+'</div>';
+const s2='<div class="step">'+bStep(2,'Options',nO>=2,nO+(nO===1?' option':' options'))+bCell('bOptions','One option per line','<textarea class="field" id="bOptions" data-bf="options" rows="'+Math.min(12,Math.max(4,nO+1))+'">'+esc(labels)+'</textarea>')+'</div>';
+const s3='<div class="step">'+bStep(3,'Criteria',nC>=1,nC+(nC===1?' criterion':' criteria'))+model.criteria.map(bCritRow).join('')+'<div class="toolbar" style="margin:4px 0 0"><button class="btn" type="button" data-bop="addcrit">Add criterion</button></div>'+(nC>1?'<p class="bnote">Weights start equal. Adjust them on the Weights tab.</p>':'')+'</div>';
+let grid;
+if(!total)grid='<p class="viewsub" style="margin:0">Add at least one option and one criterion.</p>';
+else{
+const head=model.criteria.map(c=>'<th class="txt">'+esc(c.label)+(c.unit?'<br><small>'+esc(c.unit)+'</small>':'')+'</th>').join('');
+const rows=model.options.map(o=>'<tr><td class="lbl">'+esc(o.label)+'</td>'+model.criteria.map(c=>bValueCell(model,o,c)).join('')+'</tr>').join('');
+grid='<div class="gridwrap"><table class="grid bgrid"><thead><tr><th class="lbl">Option</th>'+head+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+const s4='<div class="step">'+bStep(4,'Values',total>0&&have===total,total?have+' of '+total+' filled':'')+grid+'</div>';
+const s5='<div class="step">'+bStep(5,'Continue',false,ready?'':'Needs 2 options and 1 criterion')+'<div class="toolbar" style="margin:0"><button class="btn" type="button" data-bgo="weights"'+(nC?'':' disabled')+'>Set weights</button><button class="btn primary" type="button" data-bgo="rank"'+(ready?'':' disabled')+'>See ranking</button></div></div>';
+$('#v-build').innerHTML='<h1>Build</h1><p class="viewsub">Define the options and criteria, enter the values, then rank.</p><div class="toolbar"><button class="btn" type="button" data-bop="reset">Start blank</button></div><div class="panel">'+s1+s2+s3+s4+s5+'</div>';
+}
+};
+function wireBuild(){
+const today=()=>new Date().toISOString().slice(0,10);
+document.addEventListener('click',e=>{
+const b=e.target.closest&&e.target.closest('#v-build [data-bop],#v-build [data-bgo]');
+if(!b)return;
+if(b.dataset.bgo){STORE.actUI(ui=>{ui.activeView=b.dataset.bgo;});return;}
+const op=b.dataset.bop;
+if(op==='reset'){
+STORE.act('Start blank',m=>{const nb=blankModel();Object.keys(m).forEach(k=>delete m[k]);Object.assign(m,nb);});
+return;
+}
+if(op==='addcrit'){
+STORE.act('Add criterion',m=>{
+const eq=weightsEqual(m.criteria);
+m.criteria.push(newCriterion(m.criteria.length+1));
+if(eq)equalizeWeights(m.criteria);
+});
+return;
+}
+if(op==='delcrit'){
+let rc=null;
+STORE.act('Remove criterion',m=>{rc=removeCriterion(m,b.dataset.bk);if(weightsEqual(m.criteria))equalizeWeights(m.criteria);});
+removalToast(rc);
+}
+});
+document.addEventListener('keydown',e=>{
+const t=e.target;
+if(e.key!=='Enter'||!t.matches||!t.matches('#v-build input[data-bv]'))return;
+e.preventDefault();
+const col=Array.from(document.querySelectorAll('#v-build [data-bv][data-bk="'+t.dataset.bk+'"]'));
+const nx=col[col.indexOf(t)+1];
+if(nx)nx.focus();else t.blur();
+});
+document.addEventListener('change',e=>{
+const t=e.target;
+if(!t.closest||!t.closest('#v-build'))return;
+const f=t.dataset.bf,c=t.dataset.bc,vo=t.dataset.bv,k=t.dataset.bk;
+if(f==='name'){
+STORE.act('Rename decision',m=>{m.meta.name=t.value.trim()||'Untitled decision';m.meta.updated=today();});
+return;
+}
+if(f==='options'){
+const labels=parseList(t.value,/\n/);
+STORE.act('Edit options',m=>{
+const pool=new Map(),used=new Set();
+m.options.forEach(o=>{const q=o.label.toLowerCase();if(!pool.has(q))pool.set(q,[]);pool.get(q).push(o);});
+const matched=labels.map(l=>{const a=pool.get(l.toLowerCase());if(a&&a.length){const o=a.shift();used.add(o);return o;}return null;});
+const spare=m.options.filter(o=>!used.has(o));
+const rename=labels.length===m.options.length;
+m.options=matched.map((o,i)=>o||(rename&&spare.length?Object.assign(spare.shift(),{label:labels[i]}):{id:uid('opt'),label:labels[i],tags:[],notes:'',values:{}}));
+const keep=new Set(m.options.map(o=>o.id));
+m.view.pinned=(m.view.pinned||[]).filter(id=>keep.has(id));
+});
+return;
+}
+if(c){
+if(c==='ratings'&&!parseList(t.value,/[,\n]/).length){toast('Enter at least one rating.');STORE.actUI(()=>{});return;}
+STORE.act('Edit criterion',m=>{
+const cr=m.criteria.find(x=>x.id===k);
+if(!cr)return;
+if(c==='label')cr.label=t.value.trim()||cr.label;
+else if(c==='unit')cr.unit=t.value.trim();
+else if(c==='direction')cr.direction=t.value==='min'?'min':'max';
+else if(c==='type'){
+if(critType(cr)===t.value)return;
+if(t.value==='number'){cr.scale={kind:'linear',params:defaultParams('linear')};}
+else if(t.value==='yesno'){cr.scale={kind:'boolean',params:defaultParams('boolean')};cr.direction='max';}
+else{cr.scale={kind:'categorical',params:{map:ratingMap(['High','Medium','Low'])}};cr.direction='max';}
+m.options.forEach(o=>{o.values[cr.id]=null;});
+}else if(c==='ratings'){
+const names=parseList(t.value,/[,\n]/);
+cr.scale={kind:'categorical',params:{map:ratingMap(names)}};
+cr.direction='max';
+m.options.forEach(o=>{if(o.values[cr.id]!=null&&!names.includes(String(o.values[cr.id])))o.values[cr.id]=null;});
+}
+});
+return;
+}
+if(vo){
+const text=t.value.trim();
+const mod=STORE.model,cr0=mod.criteria.find(x=>x.id===k);
+if(!cr0)return;
+let val=null;
+const ty=critType(cr0);
+if(text!==''){
+if(ty==='number'){
+const n=Number(text);
+if(!Number.isFinite(n)){toast('Enter a number.');STORE.actUI(()=>{});return;}
+val=n;
+}else if(ty==='yesno')val=text==='yes';
+else val=text;
+}
+STORE.act('Edit value',m=>{
+const o=m.options.find(x=>x.id===vo);
+if(o)o.values[k]=val;
+});
+}
+});
+}
+function morphKey(n){
+if(n.nodeType!==1)return null;
+return n.getAttribute('data-rankrow')||n.getAttribute('data-critcard')||null;
+}
+function morphAttrs(a,b){
+Array.from(a.attributes).forEach(at=>{if(!b.hasAttribute(at.name))a.removeAttribute(at.name);});
+Array.from(b.attributes).forEach(at=>{if(a.getAttribute(at.name)!==at.value)a.setAttribute(at.name,at.value);});
+}
+function morphNode(a,b){
+if(a.nodeType!==1){if(a.nodeValue!==b.nodeValue)a.nodeValue=b.nodeValue;return;}
+morphAttrs(a,b);
+const tag=a.tagName;
+if(tag==='TEXTAREA'){if(a.value!==b.value)a.value=b.value;return;}
+morphChildren(a,b);
+if(tag==='SELECT'){if(a.selectedIndex!==b.selectedIndex)a.selectedIndex=b.selectedIndex;}
+else if(tag==='OPTION'){a.selected=b.selected;}
+else if(tag==='INPUT'){
+if(a.type==='checkbox'||a.type==='radio'){a.checked=b.checked;}
+else if(a.value!==b.value){
+a.value=b.value;
+}
+}
+}
+function morphSame(a,b){return a.nodeType===b.nodeType&&(a.nodeType!==1||a.tagName===b.tagName);}
+function morphChildren(a,b){
+const incoming=Array.from(b.childNodes),keyed=new Map();
+Array.from(a.childNodes).forEach(n=>{const k=morphKey(n);if(k)keyed.set(k,n);});
+let cur=a.firstChild;
+for(const nb of incoming){
+const k=morphKey(nb);
+if(k){
+const m=keyed.get(k);
+if(m){
+keyed.delete(k);
+if(m!==cur)a.insertBefore(m,cur);else cur=cur.nextSibling;
+morphNode(m,nb);
+}else a.insertBefore(nb,cur);
+continue;
+}
+while(cur&&morphKey(cur)&&!keyed.has(morphKey(cur)))cur=cur.nextSibling;
+if(cur&&!morphKey(cur)&&morphSame(cur,nb)){
+const nx=cur.nextSibling;
+morphNode(cur,nb);
+cur=nx;
+}else if(cur&&!morphKey(cur)){
+const nx=cur.nextSibling;
+a.replaceChild(nb,cur);
+cur=nx;
+}else a.insertBefore(nb,cur);
+}
+while(cur){const nx=cur.nextSibling;a.removeChild(cur);cur=nx;}
+}
+function prepareTree(root){
+root.querySelectorAll('[title]').forEach(el=>{el.setAttribute('data-tip',el.getAttribute('title'));el.removeAttribute('title');});
+upgradeControls(root);
+}
+function installMorph(el){
+if(!el)return;
+const d=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');
+Object.defineProperty(el,'innerHTML',{
+configurable:true,
+get(){return d.get.call(this);},
+set(html){
+html=String(html);
+if(!this.firstChild||html===''){
+d.set.call(this,html);
+if(html!=='')upgradeControls(this);
+return;
+}
+const tmp=document.createElement('div');
+d.set.call(tmp,html);
+prepareTree(tmp);
+morphChildren(this,tmp);
+}
+});
+}
+let lastView=null;
+function placeTabIndicator(){
+const nav=$('#tabs'),b=nav&&nav.querySelector('button.on');
+if(!b)return;
+nav.style.setProperty('--ix',b.offsetLeft+'px');
+nav.style.setProperty('--iw',b.offsetWidth+'px');
+if(nav.scrollWidth>nav.clientWidth)nav.scrollTo({left:b.offsetLeft-(nav.clientWidth-b.offsetWidth)/2,behavior:'smooth'});
+if(!nav.classList.contains('ready'))requestAnimationFrame(()=>nav.classList.add('ready'));
+}
+function enterView(id){
+const v=document.getElementById('v-'+id);
+if(!v)return;
+Array.from(v.children).forEach((c,i)=>c.style.setProperty('--i',Math.min(i,7)));
+v.classList.remove('enter');
+void v.offsetWidth;
+v.classList.add('enter');
+clearTimeout(v._et);
+v._et=setTimeout(()=>v.classList.remove('enter'),420);
+}
+function captureFocus(){
+const el=document.activeElement;
+if(!el||el===document.body)return null;
+let t=el;
+if(t.classList.contains('ddbtn')){t=t.parentNode.querySelector('select');if(!t)return null;}
+if(!t.closest('main'))return null;
+if(t.classList.contains('cellbox')){
+const td=t.closest('td');
+return td&&td.dataset.r!==undefined?{sel:'td[data-r="'+td.dataset.r+'"][data-c="'+td.dataset.c+'"] .cellbox'}:null;
+}
+const parts=[];
+for(const a of t.attributes)if(a.name.indexOf('data-')===0&&!['data-up','data-tip','data-lab'].includes(a.name))parts.push('['+a.name+'="'+a.value.replace(/["\\]/g,'\\$&')+'"]');
+if(!parts.length)return null;
+const f={sel:t.tagName.toLowerCase()+parts.join(''),dd:t!==el};
+try{f.start=t.selectionStart;f.end=t.selectionEnd;}catch(err){}
+return f;
+}
+function restoreFocus(f){
+if(!f)return;
+let el=null;
+try{el=document.querySelector(f.sel);}catch(err){}
+if(!el)return;
+if(f.dd){const b=el.parentNode.querySelector('.ddbtn');if(b&&b!==document.activeElement)b.focus({preventScroll:true});return;}
+if(el===document.activeElement)return;
+el.focus({preventScroll:true});
+if(typeof f.start==='number'&&el.setSelectionRange){try{el.setSelectionRange(f.start,f.end);}catch(err){}}
+}
+function captureRank(){
+if(STORE.ui.activeView!=='rank'||lastView!=='rank')return null;
+const tops=new Map(),open=new Set();
+document.querySelectorAll('#v-rank [data-rankrow]').forEach(el=>{
+tops.set(el.dataset.rankrow,el.getBoundingClientRect().top);
+if(el.querySelector('.rankbreakdown'))open.add(el.dataset.rankrow);
+});
+return tops.size?{tops,open}:null;
+}
+function playRank(s){
+if(!s||typeof Element.prototype.animate!=='function')return;
+const ease='cubic-bezier(.22,1,.36,1)';
+document.querySelectorAll('#v-rank [data-rankrow]').forEach(el=>{
+const id=el.dataset.rankrow,prev=s.tops.get(id);
+if(prev!==undefined){
+const dy=prev-el.getBoundingClientRect().top;
+if(Math.abs(dy)>1)el.animate([{transform:'translateY('+dy+'px)'},{transform:'none'}],{duration:220,easing:ease});
+}
+const bd=el.querySelector('.rankbreakdown');
+if(bd&&!s.open.has(id))bd.animate([{opacity:0,transform:'translateY(-4px)'},{opacity:1,transform:'none'}],{duration:160,easing:ease});
+});
+}
 function renderAll(){
-$$('#tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.view===STORE.ui.activeView);});
-$$('.view').forEach(v=>{v.hidden=(v.id!=='v-'+STORE.ui.activeView);});
+const av=STORE.ui.activeView;
+$$('#tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.view===av);});
+$$('.view').forEach(v=>{v.hidden=(v.id!=='v-'+av);});
 const ub=$('#undoBtn'),rb=$('#redoBtn');
 if(ub){ub.disabled=!STORE.past.length;ub.dataset.tip=STORE.past.length?('Undo: '+STORE.past[STORE.past.length-1].name):'Undo';}
 if(rb){rb.disabled=!STORE.future.length;rb.dataset.tip=STORE.future.length?('Redo: '+STORE.future[STORE.future.length-1].name):'Redo';}
-if(STORE.ui.activeView==='data')VIEWS.data.render();
-else if(STORE.ui.activeView==='criteria')VIEWS.criteria.render();
-else if(STORE.ui.activeView==='weights')VIEWS.weights.render();
-else if(STORE.ui.activeView==='rank')VIEWS.rank.render();
-else if(STORE.ui.activeView==='stress')VIEWS.stress.render();
-else if(STORE.ui.activeView==='record')VIEWS.record.render();
+if(av==='build')VIEWS.build.render();
+else if(av==='data')VIEWS.data.render();
+else if(av==='criteria')VIEWS.criteria.render();
+else if(av==='weights')VIEWS.weights.render();
+else if(av==='rank')VIEWS.rank.render();
+else if(av==='stress')VIEWS.stress.render();
+else if(av==='record')VIEWS.record.render();
+placeTabIndicator();
+if(av!==lastView){lastView=av;enterView(av);}
+}
+let _lid=0;
+function labelControls(root=document){
+root.querySelectorAll('label.flabel:not([for])').forEach(lb=>{
+const n=lb.nextElementSibling;
+if(!n)return;
+let ctl=null;
+if(n.matches('input,select,textarea'))ctl=n;
+else if(n.matches('.dd,.numf'))ctl=n.querySelector('select,input');
+if(!ctl)return;
+if(!ctl.id)ctl.id='f'+(++_lid);
+const dd=ctl.matches('select')?ctl.parentNode.querySelector('.ddbtn'):null;
+if(dd){
+dd.id=ctl.id+'-btn';
+lb.htmlFor=dd.id;
+ctl.dataset.lab=lb.textContent;
+dd.setAttribute('aria-label',lb.textContent+': '+dd.firstChild.textContent);
+}else lb.htmlFor=ctl.id;
+});
 }
 function populateExampleSelect(){
 const sel=$('#exampleSel');
 if(!sel)return;
+const bl=document.createElement('option');
+bl.value='__blank';bl.textContent='Blank model';
+sel.appendChild(bl);
 Object.keys(EXAMPLES).forEach(k=>{
 const opt=document.createElement('option');
 opt.value=k;opt.textContent=EXAMPLES[k].meta.name;
@@ -4041,7 +4482,8 @@ return;
 }
 if(e.target.id==='exampleSel'){
 const key=e.target.value;
-if(key&&EXAMPLES[key]){STORE.loadModel(EXAMPLES[key]);toast('Loaded '+EXAMPLES[key].meta.name);}
+if(key==='__blank'){STORE.loadModel(blankModel());STORE.actUI(ui=>{ui.activeView='build';});toast('Blank model');}
+else if(key&&EXAMPLES[key]){STORE.loadModel(EXAMPLES[key]);toast('Loaded '+EXAMPLES[key].meta.name);}
 e.target.value='';
 return;
 }
@@ -4214,8 +4656,8 @@ if(e.key.toLowerCase()==='z'&&!e.shiftKey){e.preventDefault();STORE.undo();retur
 if((e.key.toLowerCase()==='z'&&e.shiftKey)||e.key.toLowerCase()==='y'){e.preventDefault();STORE.redo();return;}
 }
 const modalRoot=$('#modalRoot');
-if(!typing&&/^[1-6]$/.test(e.key)&&!(modalRoot&&modalRoot.children.length)){
-const views=['data','criteria','weights','rank','stress','record'];
+if(!typing&&/^[1-7]$/.test(e.key)&&!(modalRoot&&modalRoot.children.length)){
+const views=['build','data','criteria','weights','rank','stress','record'];
 STORE.actUI(ui=>{ui.activeView=views[+e.key-1];});
 }
 });
@@ -4251,7 +4693,9 @@ const CHEV='<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-wi
 let ddOpen=null;
 function closeDd(){
 if(!ddOpen)return;
-ddOpen.menu.remove();
+const m=ddOpen.menu;
+m.classList.add('out');
+setTimeout(()=>m.remove(),90);
 ddOpen.btn.setAttribute('aria-expanded','false');
 ddOpen=null;
 }
@@ -4268,7 +4712,9 @@ const r=btn.getBoundingClientRect();
 menu.style.minWidth=r.width+'px';
 const mh=menu.offsetHeight,below=innerHeight-r.bottom;
 menu.style.left=Math.max(8,Math.min(r.left,innerWidth-menu.offsetWidth-8))+'px';
-menu.style.top=(below<mh+12&&r.top>below?Math.max(8,r.top-mh-6):r.bottom+6)+'px';
+const above=below<mh+12&&r.top>below;
+menu.style.top=(above?Math.max(8,r.top-mh-6):r.bottom+6)+'px';
+menu.style.transformOrigin=above?'bottom':'top';
 btn.setAttribute('aria-expanded','true');
 const paint=()=>Array.from(menu.children).forEach((c,i)=>c.classList.toggle('hot',i===hot));
 const pick=i=>{
@@ -4292,8 +4738,8 @@ paint();
 const h0=menu.children[hot];
 if(h0)h0.scrollIntoView({block:'nearest'});
 }
-function upgradeSelects(){
-document.querySelectorAll('select:not([data-up])').forEach(sel=>{
+function upgradeSelects(root=document){
+root.querySelectorAll('select:not([data-up])').forEach(sel=>{
 sel.dataset.up='1';
 const w=document.createElement('div');
 w.className='dd'+(sel.classList.contains('field')?' dd-field':'')+(sel.classList.contains('hdr')?' dd-hdr':'');
@@ -4303,9 +4749,13 @@ btn.setAttribute('aria-haspopup','listbox');btn.setAttribute('aria-expanded','fa
 const lab=document.createElement('span');
 btn.appendChild(lab);
 btn.insertAdjacentHTML('beforeend',CHEV);
-const sync=()=>{const o=sel.options[sel.selectedIndex];lab.textContent=o?o.textContent:'';btn.disabled=sel.disabled;};
+const sync=()=>{const o=sel.options[sel.selectedIndex];lab.textContent=o?o.textContent:'';btn.disabled=sel.disabled;if(sel.dataset.lab&&!sel.dataset.fixed)btn.setAttribute('aria-label',sel.dataset.lab+': '+lab.textContent);};
 sel.parentNode.insertBefore(w,sel);
 w.appendChild(btn);w.appendChild(sel);
+const al=sel.getAttribute('aria-label');
+if(al){btn.setAttribute('aria-label',al);sel.dataset.fixed='1';}
+const own=sel.id?root.querySelector('label[for="'+sel.id+'"]'):null;
+if(own){btn.id=sel.id+'-btn';own.htmlFor=btn.id;sel.dataset.lab=own.textContent;}
 sel.tabIndex=-1;sel.setAttribute('aria-hidden','true');
 sync();
 sel.addEventListener('change',()=>setTimeout(sync,0));
@@ -4313,8 +4763,8 @@ btn.addEventListener('click',()=>{if(ddOpen&&ddOpen.btn===btn)closeDd();else ope
 btn.addEventListener('keydown',e=>{if(!ddOpen&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();openDd(sel,btn);}});
 });
 }
-function upgradeNumbers(){
-document.querySelectorAll('input[type=number]:not([data-up])').forEach(inp=>{
+function upgradeNumbers(root=document){
+root.querySelectorAll('input[type=number]:not([data-up])').forEach(inp=>{
 inp.dataset.up='1';
 const step=inp.getAttribute('step'),min=inp.getAttribute('min'),max=inp.getAttribute('max');
 inp.type='text';inp.inputMode='decimal';inp.removeAttribute('step');
@@ -4345,22 +4795,22 @@ else if(e.key==='ArrowDown'){e.preventDefault();bump(-1);}
 });
 });
 }
-function upgradeRanges(){
-document.querySelectorAll('input[type=range]:not([data-up])').forEach(r=>{
+function upgradeRanges(root=document){
+root.querySelectorAll('input[type=range]:not([data-up])').forEach(r=>{
 r.dataset.up='1';
 const set=()=>{const lo=+r.min,hi=+r.max;r.style.setProperty('--p',((r.value-lo)/((hi-lo)||1)*100)+'%');};
 set();
 r.addEventListener('input',set);
 });
 }
-function upgradeControls(){upgradeSelects();upgradeNumbers();upgradeRanges();}
+function upgradeControls(root=document){upgradeSelects(root);upgradeNumbers(root);upgradeRanges(root);labelControls(root);}
 function askText(title,label,okLabel){
 return new Promise(res=>{
 const root=document.getElementById('modalRoot');
 root.innerHTML='<div class="modalbg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="askT" style="max-width:420px"><h2 id="askT">'+esc(title)+'</h2><label class="flabel" for="askIn">'+esc(label)+'</label><input class="field" id="askIn" autocomplete="off" style="margin-top:6px"><div class="mactions"><button class="btn ghost" id="askNo">Cancel</button><button class="btn primary" id="askOk">'+esc(okLabel||'Save')+'</button></div></div></div>';
 const inp=document.getElementById('askIn');
 inp.focus();
-const done=v=>{root.innerHTML='';res(v);};
+const done=v=>{dismissModal();res(v);};
 document.getElementById('askOk').onclick=()=>done(inp.value.trim()||null);
 document.getElementById('askNo').onclick=()=>done(null);
 root.querySelector('.modalbg').addEventListener('mousedown',e=>{if(e.target.classList.contains('modalbg'))done(null);});
@@ -4441,9 +4891,20 @@ try{const th=localStorage.getItem('rubric.theme');if(th)document.documentElement
 const themeBtn=document.getElementById('themeBtn');
 if(themeBtn)themeBtn.textContent=document.documentElement.dataset.theme==='dark'?'Light':'Dark';
 populateExampleSelect();
-STORE.subscribe(()=>{renderAll();upgradeControls();});
+STORE.subscribe(()=>{
+const fs=captureFocus(),rk=captureRank();
+renderAll();
+upgradeControls();
+restoreFocus(fs);
+playRank(rk);
+});
+const tabsEl=document.getElementById('tabs');
+if(tabsEl&&typeof ResizeObserver==='function')new ResizeObserver(placeTabIndicator).observe(tabsEl);
 wireEvents();
 wireExtras();
+wireBuild();
+document.querySelectorAll('section.view').forEach(installMorph);
+installMorph(document.getElementById('modalRoot'));
 STORE.load();
 if(typeof location!=='undefined'&&/[?&]test=1\b/.test(location.search)){
 TESTS.run();
